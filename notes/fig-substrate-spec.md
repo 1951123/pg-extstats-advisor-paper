@@ -1,5 +1,10 @@
 # Figure specification: backend-local native extended-statistics substrate
 
+Status: implemented as a TikZ vector figure in
+`paper/sections/04-substrate.tex`, labelled `fig:substrate` and rendered as a
+wide publication figure.  The specification below is the source-level review
+contract for that figure.
+
 The figure should be a three-stage left-to-right schematic, with a visible
 boundary between persistent/derived inputs and backend-local hypothetical
 state.
@@ -27,4 +32,3 @@ invariant on the arrow to the planner:
 The figure must not include benchmark counts, latency, speedup, candidate
 counts, or claims about arbitrary PostgreSQL mechanisms. It must not reuse the
 historical CE-Replay figure or depict Python as computing MCV/FD selectivity.
-

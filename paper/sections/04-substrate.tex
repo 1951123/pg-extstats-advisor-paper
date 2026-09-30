@@ -3,6 +3,12 @@
 
 \subsection{Design goals}
 
+We define the hypothetical extended-statistics substrate as a backend-local
+layer that binds frozen, advisor-derived native MCV/FD payload states---or an
+explicit \texttt{ABSENT\_NATIVE} state---to candidate statistics objects,
+exposes an ordered active subset to PostgreSQL's statistics lookup path, and
+leaves cardinality-estimator semantics inside PostgreSQL.
+
 The substrate separates a configuration decision from the physical
 statistics state that would ordinarily be created for that decision.  Its
 purpose is to let the advisor compare many supported extended-statistics
@@ -26,7 +32,58 @@ one base relation and base-relation selection estimation, a fixed externally
 supplied statistics target, arity-two MCV and functional-dependency
 (``dependencies'') candidates, and the supported predicate fragment.  The
 substrate does not attempt to make arbitrary PostgreSQL statistics objects or
-join plans hypothetical.
+join plans hypothetical.  Figure~\ref{fig:substrate} summarizes the boundary
+between captured inputs, derived payload state, backend-local activation, and
+native estimation.
+
+\begin{figure*}[t]
+\centering
+\begin{tikzpicture}[
+  substrate box/.style={draw, rounded corners=2pt, align=left,
+    text width=3.25cm, minimum height=2.25cm, inner sep=5pt,
+    font=\footnotesize},
+  substrate arrow/.style={-{Latex[length=2mm]}, thick},
+  substrate label/.style={font=\scriptsize, align=center, fill=white,
+    inner sep=1.5pt}
+]
+\node[substrate box, fill=gray!12] (capture) {\textbf{Production / capture}\\[2pt]
+  persistent input\\
+  persisted sample\\
+  workload + truth\\
+  schema + compatibility};
+\node[substrate box, fill=blue!10, right=8mm of capture] (repository) {\textbf{Advisor-derived repository}\\[2pt]
+  $P_1,\ldots,P_n$\\
+  \texttt{ABSENT\_NATIVE}\\
+  one frozen realization\\
+  no payload bytes in capture};
+\node[substrate box, fill=orange!16, dashed, right=8mm of repository] (overlay) {\textbf{Backend-local overlay}\\[2pt]
+  registered candidate state\\
+  payload or absent marker\\
+  active ordered subset $Y$\\[2pt]
+  \scriptsize session lifetime;\\[-1pt]
+  \scriptsize not persistent deployment};
+\node[substrate box, fill=green!10, right=8mm of overlay] (planner) {\textbf{PostgreSQL native planner / CE}\\[2pt]
+  lookup / filter\\
+  deserialization\\
+  MCV/FD semantics\\
+  \texttt{EXPLAIN} estimate};
+
+\draw[substrate arrow] (capture) -- node[substrate label, above]
+  {read-only\\reconstruction} (repository);
+\draw[substrate arrow] (repository) -- node[substrate label, above]
+  {register\\candidate state} (overlay);
+\draw[substrate arrow] (overlay) -- node[substrate label, above]
+  {native\\lookup} (planner);
+\node[font=\bfseries\scriptsize, align=center, below=6mm of overlay.south east,
+  anchor=north east] (invariant) {statistics state is virtualized;\\
+  estimator semantics stay native};
+\end{tikzpicture}
+\caption{The substrate derives native candidate state from a persisted capture,
+registers it in a backend-local overlay, and exposes an ordered active subset
+to PostgreSQL's native statistics path.  The overlay virtualizes state; the
+planner remains responsible for estimator semantics.}
+\label{fig:substrate}
+\end{figure*}
 
 \subsection{Candidate payload repository}
 

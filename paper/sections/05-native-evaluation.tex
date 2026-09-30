@@ -9,7 +9,8 @@ sample, workload SQL and identities, exact query truth, portable schema
 metadata, and compatibility/environment metadata.  It does not contain
 ordinary \texttt{pg\_statistic} rows, extended-statistics payload bytes, or a
 payload repository.  This separation keeps capture portable and makes the
-derived native realization an explicit advisor-side artifact.
+advisor-derived statistics realization from the persisted sample an explicit
+advisor-side artifact.
 
 The private advisor stages the sample into an isolated relation and applies
 the fixed-sample controls required by the PostgreSQL 16.14 patch.  It binds
