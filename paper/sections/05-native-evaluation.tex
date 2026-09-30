@@ -1,31 +1,190 @@
 \section{Native-Semantic What-If Evaluation}
+\label{sec:native-eval}
 
 \subsection{Reconstructing a frozen realization}
-\textit{Planning note: distinguish the capture bundle from the
-advisor-derived payload repository and trace persisted sample to staged
-relation to payload acquisition/cache.}
+
+The evaluator starts from a sealed production-capture bundle, not from a
+production catalog snapshot.  The bundle contains the persisted acquisition
+sample, workload SQL and identities, exact query truth, portable schema
+metadata, and compatibility/environment metadata.  It does not contain
+ordinary \texttt{pg\_statistic} rows, extended-statistics payload bytes, or a
+payload repository.  This separation keeps capture portable and makes the
+derived native realization an explicit advisor-side artifact.
+
+The private advisor stages the sample into an isolated relation and applies
+the fixed-sample controls required by the PostgreSQL 16.14 patch.  It binds
+the sample relation and recorded population size to the session, checks the
+relation schema, and reconstructs ordinary and extended statistics from that
+same persisted sample.  Candidate shells are created with the requested MCV
+or dependency kind and the externally supplied target.  The acquisition path
+then performs one relation-grouped \texttt{ANALYZE}; native send functions
+serialize \texttt{stxdmcv} or \texttt{stxddependencies} into a repository
+entry, or record \texttt{ABSENT\_NATIVE} when PostgreSQL returns a legitimate
+null field.
+
+The cache is keyed by the bundle/sample identity, candidate catalog, schema,
+PostgreSQL build and patch provenance, and global target.  A cache miss builds
+and atomically publishes a validated repository.  A cache hit validates the
+manifest and semantic digest, recreates the catalog shells needed for backend
+identity, performs the required pre-search shell realization, and reuses the
+same repository bytes.  These operations may involve \texttt{ANALYZE}, but
+they are acquisition or reconstruction work before the design loop.  Neither
+path treats a cache directory or a PostgreSQL OID as semantic identity.
 
 \subsection{Evaluating a design}
-\textit{Planning note: define the conceptual pipeline
-$Y\rightarrow$ register/activate $Y\rightarrow$ \texttt{EXPLAIN (FORMAT
-JSON)} $\rightarrow$ base-relation estimate $\rightarrow$ q-error
-contribution.}
+
+For a frozen realization $R$, let $Y$ denote a design represented by an
+ordered subset of the candidate catalog.  The evaluator pipeline is:
+
+\begin{center}
+\texttt{design $Y$}
+\;$\rightarrow$\;
+\texttt{register/activate $Y$}
+\;$\rightarrow$\;
+\texttt{EXPLAIN (FORMAT JSON)}
+\;$\rightarrow$\;
+\texttt{target Plan Rows}
+\;$\rightarrow$\;
+\texttt{q-error contribution}.
+\end{center}
+
+Registration occurs once when the native evaluator is constructed.  For a
+full design evaluation, the adapter activates the ordered shell-OID subset,
+executes each workload query with native \texttt{EXPLAIN (FORMAT JSON)}, and
+walks the returned plan to locate exactly one node for the target relation.
+The numeric \texttt{Plan Rows} value at that node is the estimate used by the
+objective; the evaluator does not freeze or reuse a \texttt{PlannerInfo},
+\texttt{RelOptInfo}, or final plan.
+
+Let $\widehat{N}_q(Y,R)$ be that extracted target-relation estimate and let
+$N_q>0$ be the exact truth bound to query $q$ in the workload bundle.  The
+supported positive-truth q-error contribution is
+\[
+ qerr(q,Y,R)=\max\left(\frac{\max(\widehat{N}_q(Y,R),1)}{N_q},
+                         \frac{N_q}{\max(\widehat{N}_q(Y,R),1)}\right).
+\]
+The current workload objective is the deterministic sum of these contributions
+in query-ID order.  Exact truth is therefore an input to evaluation, not a
+second estimate obtained from the advisor database.
 
 \subsection{No search-time materialization}
-\textit{Planning note: state that acquisition/reconstruction occurs outside
-the per-design loop, with no per-move CREATE/DROP/ANALYZE and no measured
-speedup claim.}
+
+The architectural distinction can be stated with two pipelines:
+
+\begin{description}
+\item[Physical per design.] Install a design, run \texttt{ANALYZE}, and call
+the native planner.  Repeating this sequence makes each candidate design a
+new physical statistics realization.
+\item[Current evaluator.] Acquire or reconstruct one frozen candidate
+repository before search, activate a design in the backend-local overlay, and
+call the native planner.  Search changes optimizer-visible statistics state
+without regenerating the candidate payload realization for every evaluated
+design.
+\end{description}
+
+The current claim is consequently about where work occurs and which state is
+reused.  It does not claim that the private advisor never runs
+\texttt{ANALYZE}; acquisition and cache reconstruction can run it before
+search.  It claims only that there is no per-design search-loop
+\texttt{CREATE}/\texttt{DROP}/\texttt{ANALYZE}.  The reported evidence is
+operation counts and exact repeated outcomes, not a measured wall-clock
+speedup against a physical-per-design baseline.
 
 \subsection{Query-level conservative reuse}
-\textit{Planning note: map a candidate move to its incidence-affected query
-set, replan affected queries, and reuse unaffected contributions; incrementality
-stops at query granularity.}
+
+The evaluator's incremental boundary is a candidate move and a conservative
+query incidence set.  For an ADD, DROP, or SWAP, the incidence index takes the
+union of the queries associated with the move endpoints.  The evaluator
+activates the counterfactual ordered design, replans exactly those affected
+queries with native \texttt{EXPLAIN}, and copies the previous immutable query
+evaluations for every other query.  In pseudocode:
+
+\[
+\begin{aligned}
+ \text{move endpoints}
+ &\;\rightarrow\; \text{candidate--query incidence}
+ \;\rightarrow\; A \\
+ &\;\rightarrow\; \text{native replan of }A
+ \;+\; \text{reuse of }Q\setminus A.
+\end{aligned}
+\]
+
+The incidence relation is deliberately conservative: false positives cause
+extra replanning, while a false negative would be a correctness failure.  The
+reuse is exact when $A$ is a conservative superset of all queries whose
+native estimate can change.  Incrementality stops at query granularity.  The
+system does not cache or mutate planner-internal state, residual clauses,
+winner decisions, or an external semantic dependency oracle; each affected
+query is replanned by PostgreSQL.
 
 \subsection{Safe objective lower bounds}
-\textit{Planning note: document current exact q-error lower-bound pruning only
-as release-qualified behavior/evidence, not as a new search theory.}
+
+The evaluator exposes an exact lower bound used by the deterministic search
+client when the affected set is conservative.  Every supported positive-truth
+q-error contribution is at least one.  If $A$ is the affected-query set and
+$L(Y)$ is the current objective, the optimistic lower bound for a move is
+\[
+ LB(Y,A)=L(Y)-\sum_{q\in A}qerr(q,Y,R)+|A|.
+\]
+It assumes that every affected query can improve all the way to its minimum
+possible contribution of one, while retaining the current contributions of
+unaffected queries.  Therefore a move with $LB(Y,A)\ge L(Y)$ cannot strictly
+improve the current state.  During best-improvement enumeration, a move with
+$LB(Y,A)>L^\star$ cannot beat the incumbent $L^\star$ either.  The
+implementation applies these two tests before invoking native evaluation and
+records the corresponding pruning reason.
+
+This is exact pruning for the stated q-error objective and conservative
+incidence contract.  It can avoid some native evaluations without changing
+the selected move, trajectory, or termination result.  It is a bounded
+search-client optimization, not a new general search algorithm or a claim of
+global optimality.
 
 \subsection{Correctness boundary}
-\textit{Planning note: define same-realization comparison using the same
-payload and effective precedence for native hypothetical versus physical
-states.}
+
+The correctness statement is conditional and deliberately narrow.  Fix one
+persisted realization $R$, the same ordinary-statistics state, the same
+candidate payload state (including any \texttt{ABSENT\_NATIVE} entries), the
+same effective precedence, and the same design $Y$.  Within the supported
+PostgreSQL 16.14 fragment, the hypothetical evaluator should return the same
+target-relation estimate vector and q-error objective as physical PostgreSQL
+using statistics derived from that same realization.  This is a
+same-realization semantic-fidelity claim, not a claim that the overlay
+reimplements the estimator.
+
+Realization robustness is a different question.  A future native
+\texttt{ANALYZE} may draw a different sample and consequently produce
+different payloads, estimates, or selected designs.  Such variation belongs
+to the independent-realization robustness evaluation; it does not refute the
+same-realization substrate contract.  Conversely, robustness evidence does
+not establish design invariance or equality of payload bytes across fresh
+realizations.
+
+\subsection{Design alternatives}
+
+Table~\ref{tab:eval-alternatives} summarizes the evaluation boundary.  The
+external-estimator row includes the earlier CE-Replay research line only as a
+historical design alternative; it is not the runtime mechanism described by
+the current advisor.
+
+\begin{table}[t]
+\caption{Evaluation-boundary alternatives.}
+\label{tab:eval-alternatives}
+\centering
+\small
+\begin{tabular}{p{0.18\columnwidth}p{0.18\columnwidth}p{0.22\columnwidth}p{0.20\columnwidth}}
+\toprule
+Approach & Repeated materialization & CE semantics & Hypothetical configuration \\
+\midrule
+Physical per design & yes & native PostgreSQL & physical \\
+External CE emulation & no & duplicated externally & software state \\
+Current substrate & no per-design & native PostgreSQL & backend-local state \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+External emulation can be a useful research interface, but it carries a
+semantic-duplication and version-maintenance burden and is bounded by the
+fidelity of the replicated rules.  The current substrate chooses a different
+boundary: retain the hypothetical state while leaving the supported estimator
+semantics in PostgreSQL.

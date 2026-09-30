@@ -1,36 +1,204 @@
 \section{Hypothetical Extended-Statistics Substrate}
+\label{sec:substrate}
 
 \subsection{Design goals}
-\textit{Planning note: require no per-design physical extstats deployment or
-search-loop \texttt{ANALYZE}, retain native PostgreSQL CE as authority, and
-keep hypothetical state backend-local.}
+
+The substrate separates a configuration decision from the physical
+statistics state that would ordinarily be created for that decision.  Its
+purpose is to let the advisor compare many supported extended-statistics
+configurations without installing and analyzing every design.  The
+evaluation boundary therefore has five requirements: payload acquisition is
+outside the design loop; no candidate design causes a per-design search-loop
+\texttt{ANALYZE}; PostgreSQL's own cardinality estimator remains authoritative;
+hypothetical state is confined to the advisor backend; and activation is
+deterministic for a representable candidate design.
+
+The last requirement includes a state that is easy to lose in a byte-oriented
+interface.  PostgreSQL can legitimately register an extended-statistics
+definition while producing no requested native payload for it.  The substrate
+must preserve that \texttt{ABSENT\_NATIVE} outcome rather than silently
+dropping the candidate or fabricating an empty blob.  These are engineering
+requirements for the supported advisor path, not a generic DBMS
+virtualization model.
+
+The implementation is deliberately bounded.  It targets PostgreSQL 16.14,
+one base relation and base-relation selection estimation, a fixed externally
+supplied statistics target, arity-two MCV and functional-dependency
+(``dependencies'') candidates, and the supported predicate fragment.  The
+substrate does not attempt to make arbitrary PostgreSQL statistics objects or
+join plans hypothetical.
 
 \subsection{Candidate payload repository}
-\textit{Planning note: describe derivation of native MCV/FD payloads,
-serialization through native mechanisms, and retention of either payload or
-\texttt{ABSENT\_NATIVE}; the repository belongs to the advisor rather than
-the capture bundle.}
+
+The system keeps four related objects distinct.  A \emph{candidate
+definition} is the deterministic catalog entry: relation, attributes,
+mechanism, statistics-object definition, and precedence rank.  A \emph{shell}
+is the corresponding PostgreSQL extended-statistics object used to give the
+candidate a catalog identity in the private advisor database.  A \emph{native
+payload} is the serialized value PostgreSQL produced for that shell under one
+statistics realization.  The \emph{payload repository} binds definitions to
+those payload states and records acquisition provenance, integrity digests,
+and PostgreSQL build identity.
+
+The repository is derived from a frozen realization, not supplied by the
+production capture contract.  Production capture exports the persisted sample
+and the workload, truth, schema, and compatibility metadata needed to
+reconstruct it.  It explicitly does not contain ordinary \texttt{pg\_statistic}
+rows, extended-statistics payload bytes, or a derived repository.  In the
+private advisor, the sample is staged, the frozen-sample controls are applied,
+and PostgreSQL derives ordinary and extended statistics from that sample.  On
+a repository cache miss, the acquisition path creates candidate shells,
+applies the fixed target, runs one relation-grouped \texttt{ANALYZE}, and
+reads the native MCV or dependency value through PostgreSQL's send function.
+On a cache hit, the advisor recreates the catalog shells and performs the
+required pre-search shell realization before reusing the validated payload
+repository.  Both paths finish before a design is evaluated.
+
+Each repository entry has an explicit realization state.  \texttt{PRESENT}
+means that the requested native payload exists and is retained as non-empty
+serialized bytes with a digest.  \texttt{ABSENT\_NATIVE} means that the
+candidate definition was registered and checked, but PostgreSQL legitimately
+returned a null requested payload field; the entry therefore has no payload
+bytes.  \texttt{UNREGISTERED} is different: it denotes an acquisition or
+validation failure, such as a missing catalog definition or incompatible
+identity, and is never treated as a statistical outcome.  The adapter fails
+closed on that state.
+
+Maintenance cost is attached to the candidate definition.  It is therefore
+the same design-level property whether the frozen realization records
+\texttt{PRESENT} or \texttt{ABSENT\_NATIVE}; payload presence is not used as a
+proxy for cost.  The maintenance model and budget are described separately in
+Section~6.
 
 \subsection{Backend-local registration}
-\textit{Planning note: describe candidate identity registration, shell/OID
-binding, payload-byte or absent-marker registration, and the absence of
-production catalog deployment.}
+
+Registration is performed by the one-session \texttt{PostgresAdapter} after
+the repository has been loaded.  The adapter first resets the overlay with
+\texttt{pg\_hypothetical\_extstats\_reset()} and resolves each candidate's
+statistics-object identity.  It checks the relation in \texttt{pg\_class},
+looks up the candidate shell in \texttt{pg\_statistic\_ext} (falling back to
+the deterministic shell name when the stored backend OID has changed), and
+verifies both relation ownership and the requested mechanism kind.
+
+For a \texttt{PRESENT} entry it calls the function
+\texttt{pg\_hypothetical\allowbreak\_extstats\allowbreak\_register} with
+\texttt{(statoid, relid, kind, payload)}.
+The patched function validates non-null OIDs, checks the shell's actual
+relation, validates the mechanism, and invokes PostgreSQL's native MCV or
+dependency deserializer before copying the bytes into backend-local state.
+For \texttt{ABSENT\_NATIVE}, the adapter calls
+\texttt{pg\_hypothetical\allowbreak\_extstats\allowbreak\_register\_absent}
+with \texttt{(statoid, relid, kind)};
+the patch records the absence without inventing a serialized value.  A
+duplicate registration, unknown shell, relation mismatch, kind mismatch, or
+malformed payload is an error rather than an implicit fallback.
+
+The patch stores the repository in memory contexts rooted at the current
+backend's top memory context and stores the active design in a child context.
+Registration and activation consequently live for the backend session unless
+the adapter resets them.  Registration does not insert or update persistent
+catalog rows.  The shell definitions used for identity are created only in
+the private advisor database during acquisition or shell reconstruction; the
+registration calls themselves perform catalog checks and populate the overlay.
+Production PostgreSQL is never modified by this interface.
 
 \subsection{Ordered activation}
-\textit{Planning note: define the active candidate subset, effective ordering
-and precedence, and supported representable configurations without claiming
-exhaustive subset enumeration.}
+
+Let $S$ be the frozen candidate catalog and let $Y\subseteq S$ be a
+representable supported design.  The candidate catalog assigns each candidate
+a unique precedence rank, and the catalog normalizes every design into that
+fixed order.  The adapter translates the resulting candidate IDs to the
+resolved shell OIDs and calls
+\texttt{pg\_hypothetical\_extstats\_activate(oid[])}.  The order of this
+array is retained by the backend and is the effective order supplied to the
+native statistics lookup path.
+
+Activation validates the whole replacement before publishing it: every OID
+must have a registered payload state, no OID may occur twice, and the
+relation identity recorded at registration is retained.  The backend builds
+an active-membership hash table and an ordered OID array atomically, then
+replaces the previous active context.  The adapter immediately reads
+\texttt{pg\_hypothetical\_extstats\_active()} and rejects a mismatch with
+the requested order.
+
+When the planner asks for extended statistics on the targeted relation, the
+patched filter first recognizes that a hypothetical realization is active,
+then emits the active registered OIDs in the requested order.  Registered
+candidate shells not in $Y$ are omitted from that relation's hypothetical
+list; unrelated, unregistered catalog objects remain ordinary PostgreSQL
+objects.  Thus the interface represents configurations over the frozen
+candidate catalog and its supported ordering, not every mathematical subset
+of every PostgreSQL statistics object.
 
 \subsection{Native planner hooks}
-\textit{Planning note: explain how the PostgreSQL lookup path sees overlay
-state while native code performs applicability, winner selection, clause
-consumption, MCV/FD composition, deserialization, and numerical CE.}
+
+The central invariant is that the overlay virtualizes statistics state; it
+does not reimplement cardinality-estimator semantics.  The patch adds a
+narrow hook after PostgreSQL obtains a relation's extended-statistics OID list:
+the list is filtered and reordered before the existing planner code creates
+its \texttt{StatisticExtInfo} nodes.  If a registered active entry is marked
+\texttt{ABSENT\_NATIVE}, the corresponding native loader is allowed to return
+no value.  If it is \texttt{PRESENT}, the MCV or dependency loader receives the
+registered bytes and invokes PostgreSQL's existing deserializer.
+
+All subsequent supported behavior remains in PostgreSQL.  The planner applies
+statistics applicability and lookup, determines effective precedence and
+selection, consumes clauses, deserializes native MCV or dependency state,
+combines MCV and FD information, and computes the numerical selectivity and
+cardinality estimate.  The adapter does not calculate an MCV match, an FD
+degree, a residual clause state, or a replacement estimate in Python.  The
+advisor supplies hypothetical statistics state; PostgreSQL executes the
+estimator semantics that consume it.
+
+This boundary also explains why the repository is more than a byte cache.  A
+cache can retain a serialized value, but the substrate additionally validates
+candidate identity and relation ownership, preserves a legitimate native
+absence, controls active membership and order, and routes the registered state
+through the native lookup and loading path.  Those behaviors make a stored
+payload usable as a PostgreSQL what-if state without claiming a generic
+virtualization theory.
 
 \subsection{Isolation and state lifetime}
-\textit{Planning note: establish backend-local lifetime, no persistent
-hypothetical deployment, and standard PostgreSQL DDL for final physical
-deployment.}
+
+The hypothetical repository and active ordered subset are backend-local.  A
+reset discards both registration and activation state for that advisor
+session; no persistent hypothetical statistics object is installed in a
+production catalog.  The private patched PostgreSQL is therefore an
+evaluation environment, not a replacement production server.  Once advice is
+accepted, the selected design is rendered as ordinary PostgreSQL
+\texttt{CREATE STATISTICS}/\texttt{ALTER STATISTICS} DDL for DBA review and
+later physical collection.  The distinction is intentional: registering a
+payload in the overlay changes what the private planner sees, whereas
+physical DDL followed by \texttt{ANALYZE} changes persistent production
+statistics state.
 
 \subsection{Supported substrate boundary}
-\textit{Planning note: freeze PostgreSQL 16.14, one base relation, arity-two
-MCV/FD statistics, fixed target, and the supported predicate fragment.}
+
+Table~\ref{tab:substrate-scope} fixes the boundary for the claims in this
+paper; extensions outside these rows are a new scope.
+
+\begin{table}[t]
+\caption{Supported hypothetical extended-statistics substrate.}
+\label{tab:substrate-scope}
+\centering
+\small
+\begin{tabular}{p{0.29\columnwidth}p{0.62\columnwidth}}
+\toprule
+Dimension & Supported boundary \\
+\midrule
+PostgreSQL & 16.14 advisor build and patch \\
+Relation scope & one base relation; base-relation selection CE \\
+Mechanisms & arity-two MCV and dependencies (FD) \\
+Target & externally supplied fixed target, default $T=100$ \\
+Realization & one persisted frozen sample and derived repository \\
+Workload & supported single-relation predicate forms \\
+Excluded & joins, higher arity, other mechanisms, target optimization \\
+Portability & no cross-version claim \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The table is a scope contract, not a claim that the substrate enumerates all
+possible configurations within PostgreSQL.  In particular, same-realization
+fidelity below does not imply that a future native \texttt{ANALYZE} will
+produce identical payload bytes or estimates.
