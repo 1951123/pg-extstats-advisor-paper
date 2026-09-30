@@ -1,4 +1,250 @@
-\section{Evaluation}
-\textit{Planning skeleton only. The section will cite compact summaries and
-exact artifacts rather than copying the system repository's experiments tree.}
+\section{Evaluation}\label{sec:evaluation}
 
+This section evaluates the frozen research prototype against five questions.
+The evidence is deliberately separated by population: DMV supplies the
+fixed-design and multi-realization robustness studies, Census supplies the
+authoritative corrected search, and the clean-room artifact supplies the
+operational lifecycle evidence.  All experiments use PostgreSQL 16.14, one
+base relation, arity-two MCV and functional-dependency statistics, a fixed
+workload, and a fixed global statistics target.  We report q-error objectives,
+exact agreement gates, design overlap, and bounded operation counts; we do not
+report a physical-per-design wall-clock baseline or a speedup claim.
+
+\subsection{Experimental Setup and Scope}
+
+Table~\ref{tab:eval-setup} summarizes the populations.  DMV is the small
+development benchmark used to test same-realization fidelity and robustness;
+Census is the authoritative corrected search case.  The persisted sample is
+part of each replay lineage.  Thus a ``same realization'' result compares two
+execution paths over the same ordinary-statistics state and native payload
+repository; it is not a claim about equality after a future independent
+\texttt{ANALYZE}.
+
+\begin{table}[t]
+\caption{Evaluation populations and purpose. Counts are effective workload
+queries after the corresponding artifact's filtering contract.}
+\label{tab:eval-setup}
+\scriptsize
+\begin{tabular}{@{}p{.15\columnwidth}p{.15\columnwidth}p{.17\columnwidth}p{.37\columnwidth}@{}}
+\toprule
+Population & Queries & Candidates / realizations & Purpose \\
+\midrule
+DMV M2.18 & 1,963 & 31 selected; one persisted realization & hypothetical--physical fidelity \\
+DMV M2.17d & 1,963 & 72; one persisted realization & full-catalog contextual ADD search \\
+Census M2.21 & 468 & 4,506; one persisted realization & authoritative search and physical validation \\
+DMV M2.19 & 1,963 & fixed 31; 10 fresh realizations & fixed-design robustness \\
+DMV M2.20 & 1,963 & 72; five persisted samples & selected-design stability \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The supported scope is intentionally narrow.  It excludes joins, arbitrary
+extended-statistics kinds, target tuning, and planner-version portability.
+The clean-room experiment uses a synthetic fixture for lifecycle checks and
+therefore is not a second production workload result.
+
+\subsection{RQ1 --- Native-Semantic What-If Fidelity}
+
+\paragraph{Question and setup.}
+Can the backend-local overlay reproduce the native physical result for a
+representable design?  DMV M2.18 compares one 31-statistics design (8 MCV and
+23 FD) through hypothetical replay and physical materialization.  Both paths
+use the same PostgreSQL 16.14 build, workload, truth, ordinary-statistics
+state, persisted sample, and payload bytes.
+
+\paragraph{Metric and result.}
+We require equality of the estimate vector, q-error vector, objective, and
+selected payloads.  The result is exact for all 1,963 estimates and q-errors,
+with 31/31 selected payloads matching.  Both paths report objective
+22,014.061; the empty-design baseline is 42,791.986.  Table~\ref{tab:rq1}
+lists the gates.
+
+\begin{table}[t]
+\caption{RQ1 same-realization fidelity gates (DMV M2.18).}
+\label{tab:rq1}
+\scriptsize
+\begin{tabular}{@{}p{.54\columnwidth}p{.32\columnwidth}@{}}
+\toprule
+Gate & Result \\
+\midrule
+Estimate vector & 1,963/1,963 exact \\
+Q-error vector & 1,963/1,963 exact \\
+Objective & 22,014.061316846422 on both paths \\
+Selected payloads & 31/31 exact \\
+Ordinary statistics and realization & exact same persisted state \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\paragraph{Interpretation and limitation.}
+Within the validated fragment and one fixed realization, the substrate
+reproduces the native physical result.  This establishes semantic fidelity of
+the overlay, not equality after a future native sampling event, cross-version
+fidelity, join fidelity, or full-planner fidelity.
+
+\subsection{RQ2 --- State Virtualization and Bounded Evaluation Work}
+
+\paragraph{Question and setup.}
+Can one frozen native payload realization evaluate many configurations without
+per-design \texttt{ANALYZE}, while conservative query-level reuse preserves
+exact outcomes?  Census M2.21 runs the deterministic ADD-only search over the
+authoritative 4,506-candidate catalog.  Acquisition and shell realization are
+pre-search operations; search moves activate counterfactual state and invoke
+the native evaluator.
+
+\paragraph{Metric and result.}
+We report conceptual moves, exact-bound pruning, native evaluations, planner
+calls, and repeat determinism.  The run considered 19,210 conceptual and
+feasible moves, pruned 2,441 by the exact bound (12.71\%), performed 16,769
+native evaluations, and issued 88,654 planner calls.  A second run matched the
+accepted sequence, final design, objective, cost, counters, and termination
+exactly.  The selected design has 112 present candidates (110 MCV and 2 FD),
+and the physical validation matched 468/468 estimates and q-errors.
+
+\begin{table}[t]
+\caption{RQ2 bounded work and exact repeat (Census M2.21).}
+\label{tab:rq2}
+\scriptsize
+\begin{tabular}{@{}p{.58\columnwidth}r@{}}
+\toprule
+Quantity & Value \\
+\midrule
+Conceptual/feasible moves & 19,210 \\
+Exact-bound pruned & 2,441 (12.71\%) \\
+Native evaluations & 16,769 \\
+Planner calls & 88,654 \\
+Repeat trajectory and result & exact match \\
+Physical validation & 468/468 estimates and q-errors \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+These counts quantify planner/evaluator work within the advisor execution;
+they do not establish a wall-clock speedup over a physical-per-design
+baseline.  Reuse is conservative and query-granular: it does not claim to
+reuse planner-internal state, and the search still uses native planning for
+the affected queries.
+
+\subsection{RQ3 --- Contextual Physical Design}
+
+\paragraph{Question and setup.}
+Do native statistics interactions make singleton utility insufficient, and can
+contextual evaluation construct a maintenance-feasible local design?  We use
+DMV M2.17d for the complete 72-candidate ADD-only search and Census M2.21 for
+the authoritative screened development path.  The DMV search reached an
+ADD-local optimum after 32 rounds; the Census run used its preregistered
+top-5\% present-candidate screen (226 candidates) and then the same native
+contextual evaluator.
+
+\paragraph{Metric and result.}
+For DMV, the objective fell from 42,791.986 to 22,014.061 (48.56\% relative
+improvement), selecting 31 candidates (8 MCV, 23 FD) at modeled cost
+175.422.  Twelve accepted DMV candidates had negative singleton utility and
+became useful only in context.  For Census, the screened ADD-only run selected
+112 candidates (110 MCV, 2 FD), reducing the objective from 5,577.426 to
+928.597 (83.35\%) at cost 198.898.  It reached an ADD-local optimum after
+113 rounds and repeated exactly.  The singleton observation is therefore
+diagnostic evidence of interaction, not a pruning theorem.
+
+\begin{table}[t]
+\caption{RQ3 contextual designs. Objectives are q-error loss; percentages are
+relative reduction from the reported empty-design baseline.}
+\label{tab:rq3}
+\scriptsize
+\begin{tabular}{@{}p{.22\columnwidth}p{.17\columnwidth}p{.17\columnwidth}p{.31\columnwidth}@{}}
+\toprule
+Run & Baseline $\rightarrow$ final & Selected & Contextual evidence \\
+\midrule
+DMV M2.17d & 42,791.986 $\rightarrow$ 22,014.061 (48.56\%) & 31 (8 MCV, 23 FD) & 12 negative-singleton rescues; ADD-local \\
+Census M2.21 & 5,577.426 $\rightarrow$ 928.597 (83.35\%) & 112 (110 MCV, 2 FD) & 226-candidate screen; 113 rounds; ADD-local \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The result supports contextual native evaluation under a budget; it does not
+claim submodularity, a global optimum, or a universally safe negative-singleton
+screen.  Census M2.21 is a screened authoritative search rather than a claim
+that all 4,506 candidates were exhaustively optimized under every move type.
+
+\subsection{RQ4 --- Production-Separated Closure}
+
+\paragraph{Question and setup.}
+Can stock PostgreSQL capture a sealed bundle that supports offline advice,
+DBA-controlled deployment, and verification without moving the patched backend
+into production?  M2.33 exercises this lifecycle in an Ubuntu 24.04 Docker
+clean-room with a two-candidate, one-query fixture.  The capture image uses
+stock PostgreSQL client tooling; the private advisor image uses source-built
+patched PostgreSQL 16.14; production and validation images use stock
+PostgreSQL 16.14.
+
+\paragraph{Metric and result.}
+The lifecycle summary is PASS for capture, offline advice, preflight,
+deployment, verification, rollback, and the fail-closed corruption,
+missing-\texttt{ANALYZE}, wrong-target, and unavailable-capture checks.  Cold
+and warm advice produced equal selected design, objective, and recommendation
+digests; the warm run hit the cache.  The advisor remained usable while
+production was stopped.  This is semantic lifecycle reproducibility, not a
+byte-level image or binary reproducibility claim.
+
+\begin{table}[t]
+\caption{RQ4 clean-room lifecycle evidence (M2.33).}
+\label{tab:rq4}
+\scriptsize
+\begin{tabular}{@{}p{.30\columnwidth}p{.38\columnwidth}p{.18\columnwidth}@{}}
+\toprule
+Stage & Zone / check & Result \\
+\midrule
+Capture & stock production; sealed bundle & PASS \\
+Unavailable capture & fail-closed advice path & PASS \\
+Advice & private patched advisor & PASS \\
+Preflight & stock target compatibility & PASS \\
+Deploy + verify & stock production + validation & PASS \\
+Rollback & stock production & PASS \\
+Corruption / wrong-$T$ / missing ANALYZE & fail-closed checks & PASS \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The fixture is intentionally small and synthetic.  The evidence does not
+establish security properties, automatic deployment or rollback, production
+payload-byte equality, or lifecycle behavior for arbitrary schemas and
+versions.
+
+\subsection{RQ5 --- Statistics-Realization Robustness}
+
+\paragraph{Question and setup.}
+How do a fixed design and independently selected designs behave across native
+statistics realizations?  DMV M2.19 replays one fixed 31-candidate design
+across ten fresh native realizations.  DMV M2.20 performs five persisted-sample
+72-candidate searches and a 5$\times$5 hypothetical cross-evaluation matrix;
+sample A is the M2.17d lineage and B--E are independently captured samples.
+
+\paragraph{Metric and result.}
+For M2.19, every run remained beneficial: relative improvement ranged from
+43.75\% to 48.62\%; 28 candidates were always present, three changed state,
+and none were always absent.  For M2.20, selected design sizes were 31, 31,
+31, 28, and 30; pairwise Jaccard similarity ranged from 0.743 to 0.938
+(median 0.846).  The consensus core contained 25 candidates and the near-core
+contained 28.  Cross-sample local/foreign objective gaps were at most 0.00891\%
+and no foreign design beat the local design in the reported matrix.
+
+\begin{table}[t]
+\caption{RQ5 robustness across DMV statistics realizations.}
+\label{tab:rq5}
+\tiny
+\begin{tabular}{@{}p{.27\columnwidth}p{.61\columnwidth}@{}}
+\toprule
+Study & Result \\
+\midrule
+M2.19 fixed design & 10 fresh realizations; all positive; 43.75--48.62\% relative improvement; 28 stable-present, 3 state-flipped \\
+M2.20 selected designs and portability & 5 samples; sizes 31/31/31/28/30; Jaccard 0.743--0.938 (median 0.846); 25-candidate core; maximum local/foreign gap 0.00891\%; no foreign design beat local \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The evidence supports the tested fixed design and near-equivalent selected
+designs, not identity invariance; it does not test drift, future native-sample
+equivalence, cross-version behavior, or maintenance refitting.  No CE-Replay
+evidence is used here; all claims come from native-state experiments and the
+clean-room lifecycle artifact.
+\vspace{-8pt}
