@@ -1,0 +1,40 @@
+\documentclass[sigconf,nonacm]{acmart}
+
+%%% Keep the frozen PVLDB template/version from the legacy manuscript. %%%
+\usepackage{pvldb}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+\renewcommand\vldbdoi{XX.XX/XXX.XX}
+\renewcommand\vldbpages{XXX--XXX}
+\renewcommand\vldbavailabilityurl{https://github.com/1951123/pg-extstats-advisor}
+
+\begin{document}
+\title{TITLE PLACEHOLDER: pg-extstats-advisor}
+\author{AUTHOR METADATA PENDING}
+\affiliation{\institution{AFFILIATION METADATA PENDING}\city{CITY METADATA PENDING}\country{COUNTRY METADATA PENDING}}
+\email{EMAIL-METADATA-PENDING@example.invalid}
+
+\begin{abstract}
+ABSTRACT PLACEHOLDER. This skeleton is intentionally not a formal manuscript
+rewrite; claims and evidence are frozen in the planning and provenance notes.
+\end{abstract}
+\maketitle
+\vldbtopmatter
+
+\input{sections/01-introduction}
+\input{sections/02-background}
+\input{sections/03-problem}
+\input{sections/04-architecture}
+\input{sections/05-semantics}
+\input{sections/06-ce-replay}
+\input{sections/07-design}
+\input{sections/08-evaluation}
+\input{sections/09-related-work}
+\input{sections/10-conclusion}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{references}
+\end{document}
+

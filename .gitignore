@@ -1,0 +1,27 @@
+# LaTeX build products
+*.aux
+*.log
+*.out
+*.toc
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+paper/build/
+paper/*.pdf
+
+# Local environments and generated artifacts
+.venv/
+.build/
+build/
+experiments/
+payloads/
+
+# Editor and OS files
+.DS_Store
+*~
+.#*
+.vscode/
+.idea/
+
