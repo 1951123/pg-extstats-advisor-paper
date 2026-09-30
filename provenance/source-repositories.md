@@ -23,4 +23,4 @@
 
 - Repository: `git@github.com:1951123/pg-extstats-advisor-paper.git`
 - Local path: `/root/projects/pg-extstats-advisor-paper`
-- Initial bootstrap commit: `fd47843c77d34ffb23f211f49f254b52983801ac`
+- Initial bootstrap commit: `fd478435d014b4101472e24d56a9acd2240bc522`
