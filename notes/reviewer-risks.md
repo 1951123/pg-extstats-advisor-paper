@@ -2,9 +2,14 @@
 
 ## R1 — Novelty versus specialization
 
-A reviewer may view CE-Replay as PostgreSQL-specific partial evaluation or
-manual specialization. The paper must state the represented computation and
-avoid implying a general source compiler.
+A skeptical reviewer may view CE-Replay as a PostgreSQL-specific
+specialization of configuration-parametric, partial-evaluation, or
+incremental-computation ideas. Do not deny that prior art. Do not claim a new
+general representation theory. Make the represented object explicit:
+statistics-sensitive estimator state transitions. Make the consequence
+explicit: the same executable transitions determine hypothetical CE and
+counterfactual semantic invalidation. Present PostgreSQL MCV/FD as the
+validated instantiation.
 
 ## R2 — Scope narrowness
 
