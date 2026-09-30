@@ -1,21 +1,122 @@
 \section{Background and Motivation}
 
 \subsection{PostgreSQL extended statistics}
-\textit{Planning note: introduce \texttt{CREATE STATISTICS}, MCV and
-functional-dependency statistics, \texttt{ANALYZE}, the
-\texttt{pg\_statistic\_ext} catalogs, and the fixed statistics target.}
+
+Ordinary PostgreSQL column statistics summarize one attribute at a time.  A
+planner that combines such summaries can therefore miss correlations between
+predicates, or approximate them with an independence assumption.  PostgreSQL
+extended statistics add multivariate state for a selected group of columns.
+The supported fragment in this paper uses two native kinds: most-common-value
+(MCV) statistics, which record frequent combinations and their frequencies,
+and functional dependencies (``dependencies''), which summarize directional
+relationships between columns~\cite{postgresql16docs,postgresql16source}.
+
+The SQL definition and the data-derived state are different objects.
+\texttt{CREATE STATISTICS} registers a statistics definition for a relation,
+its attributes, and one or more requested kinds.  PostgreSQL records that
+definition in \texttt{pg\_statistic\_ext}, including its object identity and
+keys.  \texttt{ANALYZE} subsequently derives data-dependent summaries from
+the relation and stores the resulting native values in
+\texttt{pg\_statistic\_ext\_data}.  The MCV or dependency payload is thus a
+property of a definition \emph{under a data realization}, not a constant
+property of the column names.
+
+The statistics target controls how much detail PostgreSQL attempts to retain
+for the requested statistics.  It affects the resulting payload and its
+resource requirements, so it is part of the configuration identity in the
+current system.  The product fixes an externally supplied global target
+($T=100$ by default) before capture and advice; it does not optimize a
+per-candidate target.  A registered definition can also have no requested
+native payload after \texttt{ANALYZE}; the advisor represents this legitimate
+outcome as \texttt{ABSENT\_NATIVE} rather than fabricating an empty value.
+
+For the rest of the paper, it is useful to name the two kinds of state.  The
+\emph{definition state} comprises the relation, the ordered attribute keys,
+the requested mechanism, the target and the statistics-object identity.  The
+\emph{payload state} comprises the native MCV bytes, dependency bytes, or an
+explicit native absence produced for that definition under one realization.
+Physical extended-statistics evaluation ordinarily couples both: the
+definition must exist in the catalog before PostgreSQL can collect or consume
+its payload.
 
 \subsection{Why configuration evaluation is difficult}
-\textit{Planning note: distinguish a statistics definition from its
-data-dependent payload, and motivate the cost of physical materialization,
-repeated \texttt{ANALYZE}, and contextual extstats interactions.}
+
+The straightforward way to evaluate a candidate design is physical.  For a
+design, a tuning process creates the requested statistics definitions, applies
+the target with \texttt{ALTER STATISTICS ... SET STATISTICS} when needed, runs
+\texttt{ANALYZE}, and executes the workload with native \texttt{EXPLAIN}.
+Dropping or replacing definitions is then needed before testing another
+configuration.  This path preserves PostgreSQL semantics, but it couples a
+configuration search to repeated catalog mutation and data-dependent payload
+materialization.  The issue is repeated materialization work, not an
+unsupported claim about wall-clock performance.
+
+Extended-statistics utility is also contextual.  With several candidate
+objects active, PostgreSQL may change which objects are applicable, their
+precedence or winner selection, the clauses consumed by one object, and the
+way MCV and dependency information is composed.  The resulting cardinality
+estimate can therefore depend on the rest of the active configuration.
+Consequently, the usefulness of a candidate cannot generally be treated as a
+configuration-independent scalar.  This is an established interaction
+phenomenon; the evidence for it in the supported PostgreSQL fragment is
+reported later, not asserted as a new theorem here.
 
 \subsection{Existing what-if and statistics-management approaches}
-\textit{Planning note: briefly place MNSA, AutoAdmin/DTA, HypoPG,
-StatAdvisor/DB2, Oracle pending/imported statistics, and PostgreSQL 19
-restore in the design space without duplicating Section 9.}
+
+Several prior-art families define the surrounding design space.  Workload-
+driven statistics selection, maintenance overhead, and interaction-aware
+recommendation are established by automated statistics management such as
+MNSA~\cite{chaudhuri2001statistics}, StatAdvisor~\cite{elhelw2009statadvisor},
+and DB2 statistical views and column-group statistics~\cite{db2statviews}.
+These systems establish that choosing statistics-bearing objects for a
+workload and accounting for their resource implications are prior problems;
+the present paper does not claim the problem formulation as new.
+
+What-if physical design provides a second lineage.  AutoAdmin's What-If Index
+Analysis Utility and SQL Server's Database Engine Tuning Advisor evaluate
+hypothetical physical configurations against workloads without implementing
+each proposed structure~\cite{chaudhuri1998whatif,microsoftdta}.  HypoPG makes
+planner-visible hypothetical objects backend-local in PostgreSQL~\cite{hypopg}.
+The analogy is direct: a hypothetical index virtualizes a physical-design
+state while the native optimizer evaluates it.  What-if configuration
+analysis and planner-visible hypothetical objects are therefore established
+prior art, not claims of this paper.
+
+A third family transports or delays publication of precomputed statistics.
+Oracle supports pending statistics for session testing and import/export of
+collected statistics~\cite{oraclependingstats,oracleimportstats}; DB2 provides
+statistics-bearing views and column groups; and PostgreSQL 19 documents
+\texttt{pg\_restore\_extended\_stats()} for restoring extended-statistics
+values after a restore~\cite{db2statviews,postgresql19restore}.  Testing,
+transporting, restoring, or delaying publication of precomputed statistics is
+also established.  The paper does not claim that statistics injection or
+statistics restoration without an immediate \texttt{ANALYZE} is new.
 
 \subsection{Design alternatives}
-\textit{Planning note: contrast physical-per-design evaluation, external CE
-emulation, and native-state virtualization; CE-Replay appears here only as
-the historical external-emulation alternative.}
+
+These precedents leave a narrower systems capability required by our
+PostgreSQL setting.  This paper focuses on a backend-local evaluation
+substrate in which a frozen catalog of native MCV/FD candidate states can be
+registered, selectively activated in representable configurations, and
+consumed by PostgreSQL's native estimator without physically materializing
+each design.  The scope is deliberately limited to the supported PostgreSQL
+16.14, one-base-relation, fixed-target, arity-two fragment; it is not a claim
+about generic what-if optimization or arbitrary PostgreSQL statistics.
+
+There are three conceptual alternatives.  \emph{Physical-per-design}
+evaluation keeps native semantics and persistent catalog state, but repeats
+definition creation, payload collection, and planner evaluation for each
+configuration.  \emph{External estimator emulation} makes hypothetical
+configurations easy to represent after one acquisition, but duplicates a
+selected subset of PostgreSQL's applicability, precedence, clause
+consumption, and MCV/FD composition rules outside the database.  An earlier
+CE-Replay project line used this approach for a bounded research fragment; it
+is historical context here, not the runtime mechanism of the current advisor.
+
+\emph{Native-state virtualization} acquires one frozen realization, retains
+the native candidate states, exposes a transient backend-local membership and
+order, and asks PostgreSQL to perform the native estimate.  The key design
+choice is therefore to virtualize statistics state, not cardinality-estimator
+semantics.  Section~3 formalizes the resulting definition, realization, and
+budget contract; Sections~4 and~5 then describe the backend-local substrate
+and native evaluation boundary.
