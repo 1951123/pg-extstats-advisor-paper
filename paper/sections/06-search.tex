@@ -1,23 +1,128 @@
 \section{Advisor Search and Maintenance Constraint}
 
-\subsection{Search as a substrate consumer}
-\textit{Planning note: state explicitly that search consumes the substrate
-and is not the paper's novelty.}
+Search is a client of the native what-if substrate, not the paper's primary
+technical novelty.  The product obtains a baseline with
+\texttt{evaluate\_design} and evaluates counterfactual configurations through
+\texttt{evaluate\_move}; PostgreSQL remains responsible for native
+applicability, payload consumption, and cardinality estimation.  Search is
+therefore replaceable and is not a new optimization algorithm.  The current
+product uses a deterministic contextual ADD-only construction because it is a
+small, reproducible client with which to exercise the evaluator under a
+maintenance budget.
 
-\subsection{Product search}
-\textit{Planning note: describe only the release-qualified deterministic
-contextual ADD-only search; do not describe product search as ADD/DROP/SWAP.}
+\subsection{Search as a substrate consumer}
+
+For a current design $Y$, an ADD move for an unselected candidate $s$ asks the
+substrate to evaluate $Y\cup\{s\}$ in the context of the active design.  The
+search client does not replace the native evaluator with a utility model: it
+enumerates candidate moves, supplies them to the evaluator, and compares the
+returned values of $L(Y;R)$.  This separation means that another client could
+use the same candidate repository, ordered activation, and evaluator without
+adopting this search policy.
+
+\subsection{Deterministic contextual ADD search}
+
+The release-qualified workflow sets the \texttt{add\_only} field of
+\texttt{SearchConfig} to true.  Its product algorithm is a
+deterministic contextual ADD-only best-improvement (greedy) construction.  At
+each round it enumerates every candidate not in $Y$, rejects a candidate whose
+counterfactual design would violate $C(Y')\le B$, applies exact lower-bound
+pruning where available, and natively evaluates the remaining moves.  It
+accepts the best strictly improving move and repeats from the resulting
+design.  A tie is resolved by the lower maintenance cost and then by the
+candidate's deterministic rank key; for ADD moves this key is precedence rank
+followed by candidate ID.  Candidate enumeration and activation use the same
+fixed precedence discipline, so equal inputs produce the same trajectory.
+
+The contextual marginal change for a candidate is
+\[
+ \Delta(s\mid Y,R)=L(Y;R)-L(Y\cup\{s\};R),
+\]
+not a fixed singleton score.  The native estimate for $Y\cup\{s\}$ can
+depend on the currently active statistics, on precedence, and on other
+selected candidates.  Contextual greedy/local physical-design search is
+established prior art; the role of the algorithm here is to exercise the
+native what-if substrate under a scoped maintenance constraint.  The library
+also contains an ADD/DROP/SWAP development mode, but that mode is not the
+release-qualified advisor path evaluated as the product workflow.
 
 \subsection{Maintenance constraint}
-\textit{Planning note: describe the empirical mechanism-count cost model,
-fixed-target and environment-specific scope, and budget feasibility without
-presenting a universal PostgreSQL maintenance law.}
+
+The search uses the notation of Section~\ref{sec:problem}.  Each candidate
+definition has a cost $c(s)$, the design cost is
+$C(Y)=\sum_{s\in Y}c(s)$, and a move is feasible only when its endpoint
+satisfies $C(Y')\le B$.  The current model is an empirical mechanism-count
+model for the supported arity-two MCV/FD catalog.  Its parameters are fixed
+before search, validated against the externally supplied target $T$, and
+loaded as part of the run configuration; they are not learned or refit while
+the search proceeds.  The model is target- and environment-specific.  It is a
+reproducible first-order maintenance resource constraint, not a universal
+PostgreSQL maintenance law or a causal per-candidate \texttt{ANALYZE} model.
+
+Cost belongs to the candidate definition, rather than to the realized
+payload.  Thus a candidate with either \texttt{PRESENT} or
+\texttt{ABSENT\_NATIVE} state has the same definition-level cost.  The budget
+check is performed before native evaluation whenever the implementation can
+reject the move directly, avoiding work for infeasible endpoints while
+preserving the design semantics from Section~\ref{sec:problem}.
 
 \subsection{Contextual utility}
-\textit{Planning note: explain why singleton utility need not equal
-contextual utility while acknowledging statistics interactions as prior art.}
+
+The search evaluates utility in the current context.  A candidate that is
+weak or even harmful as a singleton can improve a design after another
+candidate has changed native applicability, clause consumption, or MCV/FD
+composition.  Conversely, a positive singleton result need not determine the
+best move later in the trajectory.  The evaluator therefore computes
+$\Delta(s\mid Y,R)$ for the current $Y$ rather than caching one design-
+independent score.  This is an application of established statistics
+interaction behavior, not a new interaction theorem.
+
+The release-qualified \texttt{advise\_fixed\_t} path uses the full product
+candidate catalog as its search-visible set.  Singleton profiles and explicit
+candidate-set filters are available as separately versioned development or
+artifact interfaces, but the core workflow does not claim that a negative
+singleton utility is a generally safe pruning rule.  If a restricted visible
+set is supplied by another workflow, that restriction is an explicit input
+and must not be confused with a theorem about the omitted candidates.
 
 \subsection{Termination and nonclaims}
-\textit{Planning note: state add-local-optimum termination and no global
-optimality claim; mention ADD/DROP/SWAP only as separated development/library
-capability if needed.}
+
+The high-level loop is:
+\[
+\begin{aligned}
+Y&\leftarrow\varnothing;\\
+&\textbf{repeat:}\\
+&\quad\text{enumerate feasible ADD moves;}\\
+&\quad\text{prune only with the exact bound;}\\
+&\quad\text{evaluate remaining moves natively;}\\
+&\quad\text{choose the deterministic best strict improvement;}\\
+&\textbf{until none exists.}
+\end{aligned}
+\]
+The returned search result contains the selected design $Y$, its objective
+$L(Y;R)$, its maintenance cost $C(Y)$, the budget $B$, and deterministic
+trajectory and operation metadata.  The product termination label is
+\texttt{add-local-optimum}: no feasible single ADD move gives a strict
+objective improvement under the current budget and frozen realization.
+
+The evaluator's conservative incidence index supplies the reuse boundary for
+each candidate move.  The endpoint candidate determines an affected query set
+$A$; PostgreSQL replans $A$ under the counterfactual ordered activation, while
+the evaluator reuses the contributions for $Q\setminus A$.  False positives
+in $A$ cost additional planner work, whereas a false negative would violate
+correctness.  Incrementality therefore stops at query granularity, as
+described in Section~5.
+
+Section~5 also gives the safe objective lower bound used
+before native evaluation.  A move is skipped only when the bound certifies no
+strict improvement or that the move cannot beat the current best move.  The
+pruning is exact for the stated q-error objective and conservative incidence
+contract, but it is a secondary search-client optimization rather than a new
+algorithmic contribution.
+
+The product path makes no claim of search novelty, global optimality, or an
+approximation guarantee.  Its ``local optimum'' qualifier is specifically
+ADD-local; it is not a DROP/SWAP local optimum.  The maintenance model is
+scoped to its fixed target and calibration environment, singleton utility is
+not a universally safe pruning rule, and query reuse does not extend to
+planner-internal state.
