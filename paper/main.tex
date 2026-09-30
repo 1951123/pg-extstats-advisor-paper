@@ -12,32 +12,33 @@
 \renewcommand\vldbavailabilityurl{https://github.com/1951123/pg-extstats-advisor}
 
 \begin{document}
-\title{Executable Cardinality-Estimation Semantics for PostgreSQL Statistics Physical Design}
+\title{Native What-If Evaluation of PostgreSQL Extended-Statistics Configurations}
 \author{AUTHOR METADATA PENDING}
 \affiliation{\institution{AFFILIATION METADATA PENDING}\city{CITY METADATA PENDING}\country{COUNTRY METADATA PENDING}}
 \email{EMAIL-METADATA-PENDING@example.invalid}
 
 \begin{abstract}
-Selecting extended statistics for a supplied workload is a physical-design
-problem: the effect of one object depends on the other selected objects because
-the estimator executes configuration-dependent control and state transitions.
-Independent candidate scores therefore cannot reliably represent the design
-space. We present CE-Replay, a workload-specialized, design-parametric,
-executable representation of the supported statistics-sensitive estimator
-transitions. It exposes two interfaces from the same transition system: an
-objective oracle for hypothetical cardinality estimates and a semantic
-dependency oracle for counterfactual move invalidation. The surrounding
-pg-extstats-advisor keeps production PostgreSQL stock: a read-only production
-capture seals a frozen realization, an offline advisor evaluates hypothetical
-designs without production credentials, and the result is a recommendation for
-DBA-controlled PostgreSQL deployment. Within PostgreSQL 16.14 conjunctive base-relation
-restrictions, arity-two MCV and functional-dependency statistics, and the
-supported predicate fragment, we validate native semantic fidelity, contextual
-and non-monotone candidate behavior, exact incremental move evaluation, and
-physical deployment and clean-room workflow closure. Independent DMV
-realizations provide bounded robustness evidence rather than an invariance
-claim. The result is a scoped physical-design system, not a general
-PostgreSQL cardinality estimator, a global optimizer, or a latency guarantee.
+PostgreSQL extended statistics can improve cardinality estimates for correlated
+predicates, but choosing a useful subset requires evaluating many
+configurations. MCV and functional-dependency payloads are data-dependent
+products of `ANALYZE` coupled to PostgreSQL catalog state. Materializing every
+design repeats this physical step, while an external estimator risks semantic
+drift. We present `pg-extstats-advisor`, a backend-local what-if substrate for
+the supported PostgreSQL 16.14 extended-statistics fragment. The private
+advisor derives native candidate payloads under one frozen realization, stores
+them in a repository, registers a payload or `ABSENT\_NATIVE`, and transiently
+activates representable subsets in a backend-local overlay. PostgreSQL itself
+performs applicability, precedence, consumption, deserialization, MCV/FD
+composition, and cardinality estimation through native `EXPLAIN`; the search
+loop performs no per-design `ANALYZE` or physical deployment. Production
+PostgreSQL remains stock: read-only capture exports the persisted sample and
+metadata, while the private advisor reconstructs the repository and returns
+ordinary DBA-controlled statistics DDL. We report same-realization
+hypothetical/physical fidelity, contextual candidate behavior, operation
+counts and query-level reuse, lifecycle closure, and independent-realization
+robustness. The scope is one base relation, a fixed target, and arity-two MCV/FD
+statistics; no new CE, search novelty, global-optimum, latency, or
+physical-evaluation speedup claim is made.
 \end{abstract}
 \maketitle
 \vldbtopmatter

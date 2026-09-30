@@ -1,132 +1,142 @@
 \section{Introduction}
 
-Cost-based query optimization depends on cardinality estimates to compare
-candidate plans. Ordinary per-column statistics often approximate predicates
-as independent even when attributes are correlated. Extended statistics provide
-multivariate information that can improve this situation, including most-common
-values and functional dependencies in PostgreSQL~\cite{ilyas2004cords,postgresql16docs}.
-Choosing which extended statistics to maintain is therefore itself a physical
-design problem. The choice changes the information available to optimization,
-and deployed objects also incur recurring collection and refresh work. A useful
-design must balance estimator utility against a maintenance capacity rather
-than treating statistics collection as a free preprocessing step.
+Cardinality estimates guide cost-based query optimization: they influence the
+plans that the optimizer compares and therefore the work selected for a
+workload. Ordinary per-column statistics often approximate predicates as
+independent even when attributes are correlated. PostgreSQL extended statistics
+provide multivariate information, including most-common-value (MCV) and
+functional-dependency (FD) statistics, that can improve estimates for such
+predicates~\cite{ilyas2004cords,postgresql16docs}. Choosing which extended
+statistics to maintain is consequently a physical-design task. This task is
+not new: workload-driven statistics management and reduction of unnecessary
+statistics were studied in MNSA~\cite{chaudhuri2001statistics}, and systems
+such as StatAdvisor recommend statistics-bearing objects for a workload while
+accounting for interactions~\cite{elhelw2009statadvisor}. A practical design
+still has to balance estimator utility against the recurring cost of collecting
+and maintaining the selected objects.
 
-The difficulty is not only the size of the candidate universe. An extended
-statistics object's effect is contextual. Changing the selected set can change
-which objects are applicable, which overlapping object wins, which clauses or
-semantic dimensions are consumed, whether a downstream MCV or functional-
-dependency stage remains reachable, and how payload-dependent numerical
-updates are applied. A statistic that is useful in isolation can become
-irrelevant after another object consumes its dimensions; a statistic that is
-negative as a singleton can become useful after a different object changes the
-residual state. The response need not be additive or monotone. Consequently,
-singleton scores and static per-object benefit models are insufficient for
-reliably evaluating a hypothetical design.
+The systems obstacle addressed here is the boundary between a candidate
+statistics definition and its realized payload. An extended-statistics object
+has a definition, but its MCV or FD payload is data-dependent and normally
+produced by PostgreSQL's \texttt{ANALYZE} while coupled to catalog state. A
+straightforward physical evaluation therefore couples configuration search to
+creating statistics, materializing or collecting their payloads, and invoking
+the native planner. A workload search that compares many configurations would
+repeat that physical-state step. The issue is not merely the number of
+candidates: the state needed to evaluate a configuration is ordinarily the
+same state that must be physically collected for that configuration. We make no
+runtime claim from this observation; it identifies the evaluation boundary
+that the system changes.
 
-This paper builds on, rather than reclaims, established ideas in workload-driven
-statistics management, physical-design interactions, what-if analysis,
-configuration-parametric optimization, and dependency-aware incremental
-computation~\cite{chaudhuri2001statistics,schnaitter2009interactions,chaudhuri1998whatif,papadomanolakis2007inum,bruno2008cpqo,liu2016incremental}.
-Those lines of work establish why design objects can interact, how a system can
-evaluate hypothetical configurations, and how unnecessary recomputation can be
-avoided. The narrower challenge addressed here is the represented object. The
-object is the statistics-sensitive estimator transition system itself. It
-cannot be replaced by a fixed response table or by a winner trace observed for
-one design, because changing the selected set can alter future control and
-downstream semantic state. The contribution is thus not a new generic
-configuration-parametric or incremental-computation theory; it is an explicit,
-executable representation of the native-semantic transitions needed by this
-statistics physical-design task.
+Several established design points define the surrounding space. AutoAdmin's
+what-if interface and SQL Server's Database Engine Tuning Advisor evaluate
+hypothetical physical configurations against workloads without implementing
+each proposed index or other structure~\cite{chaudhuri1998whatif,microsoftdta}.
+HypoPG makes planner-visible hypothetical objects backend-local in
+PostgreSQL~\cite{hypopg}. StatAdvisor and DB2 statistical views support
+statistics-bearing objects, column groups, optimizer matching, and workload
+recommendation~\cite{elhelw2009statadvisor,db2statviews}. Oracle supports
+pending statistics for session testing and import/export of collected
+statistics~\cite{oraclependingstats,oracleimportstats}; PostgreSQL 19 now
+documents \texttt{pg\_restore\_extended\_stats()} for restoring extended
+statistics after a restore~\cite{postgresql19restore}. Thus workload-driven
+selection, what-if configuration analysis, hypothetical objects, precomputed
+statistics testing, offline/test-server tuning, and advisor lifecycles are not
+claims of this paper. The
+narrower capability we address is a PostgreSQL-native what-if substrate for
+extended-statistics payload states that can be selected and recombined during a
+configuration search.
 
-We call this representation \emph{CE-Replay}. CE-Replay is workload-specialized,
-design-parametric, and executable. It freezes workload-fixed context such as
-the supplied clauses, relation context, and ordinary selectivities, while
-leaving design-dependent applicability, winner selection, clause and
-semantic-dimension consumption, residual state, MCV-to-FD composition,
-payload-dependent numerical updates, and relevant realization/precedence state
-executable for every hypothetical selected set. The representation is native-
-semantic within a stated PostgreSQL 16.14 fragment; it is not a complete
-PostgreSQL estimator or a source-to-source compiler.
+The central design choice is to virtualize statistics state, not
+cardinality-estimator semantics. There are three conceptual alternatives.
+Physical evaluation materializes and analyzes each design before asking the
+native planner for its response. External CE emulation instead reproduces a
+selected set of estimator rules outside the database, which risks divergence
+from version-specific applicability, precedence, consumption, and composition.
+The current design retains candidate native payload state, activates a
+transient backend-local configuration, and delegates the estimate to
+PostgreSQL. An earlier CE-Replay design line externalized a bounded subset of
+estimator semantics for research experiments; it is historical context, not
+the runtime mechanism of the current advisor.
 
-The same executable transition system exposes two interfaces. Its \textbf{objective
-oracle} computes the cardinality estimate and workload loss induced by a
-hypothetical physical statistics state. Its \textbf{semantic dependency oracle}
-computes counterfactual and structural dependencies: which queries and semantic
-dimensions may change when a design move is proposed. These dependencies are
-not merely a log of what happened in one realized trace. They arise from the
-same transitions that produce the estimate, so the system can preserve the
-control and numerical consequences of a move while avoiding semantically
-irrelevant recomputation. In particular, the same executable transition system
-both determines the hypothetical estimate and exposes what semantic state may
-change under a design move.
+For a candidate catalog $S$ and one frozen realization $R$, each supported
+candidate $s\in S$ has a native payload state $P_s(R)$ or an explicit
+\texttt{ABSENT\_NATIVE} state. For a representable design $Y\subseteq S$, the
+advisor registers the candidate states, activates an ordered subset, and calls
+native PostgreSQL \texttt{EXPLAIN}. The backend-local overlay virtualizes
+candidate identity, native payload bytes or absence, active membership, and
+effective activation order. PostgreSQL continues to execute applicability,
+winner selection, clause consumption, payload deserialization, MCV/FD
+composition, and numerical cardinality estimation. The Python advisor does
+not emulate those CE rules; it supplies the hypothetical state that the native
+planner consumes.
 
-CE-Replay is the core mechanism of \emph{pg-extstats-advisor}. The system keeps
-the production trust zone deliberately small: stock PostgreSQL remains
-unpatched, a read-only production-side capture exports a sealed frozen
-realization, and an offline advisor consumes that bundle without production
-credentials. The advisor evaluates hypothetical definitions and payloads,
-returns a recommendation in standard PostgreSQL statistics DDL, and leaves
-preflight, deployment, \texttt{ANALYZE}, verification, and optional rollback
-verification to a DBA-controlled lifecycle. This separation makes the
-physical-design evaluator useful even when production is unavailable during
-advice; Docker clean-room execution is used as a reproducibility check for the
-workflow, not as the scientific contribution.
+This is more than storing serialized bytes. The repository is necessary but is
+not by itself the what-if mechanism. Registration validates candidate identity
+and relation ownership; \texttt{ABSENT\_NATIVE} preserves a legitimate native
+absence; activation replaces the membership and order considered by the
+planner; and the patched lookup path lets native statistics code consume the
+registered state. The resulting interface is intentionally specific to the
+supported PostgreSQL fragment. It is not presented as a generic virtualization
+theory or as a replacement for prior hypothetical-object systems.
 
-The realization boundary is important for interpreting correctness. Replay
-correctness is defined for a matched, persisted realization: under the same
-payload and effective precedence, CE-Replay should reproduce the supported
-native estimate. A later native \texttt{ANALYZE} can produce a different fresh
-realization, with different payloads, estimates, or preferred designs. Frozen
-and fresh payloads therefore need not be identical. Differences across
-independent realizations are treated as a robustness question, not as a failure
-of same-realization replay fidelity, and the paper does not claim native-sample
-equivalence or design invariance.
+The system realization is \emph{pg-extstats-advisor}. Production PostgreSQL
+stays stock and capture is read-only. Capture exports the persisted sample,
+workload truth, schema, and compatibility metadata; it does not export native
+extended-statistics payload bytes. A private advisor PostgreSQL reconstructs
+one frozen statistics realization, derives or loads the native candidate
+payload repository, evaluates hypothetical configurations, and emits an
+ordinary recommendation. A DBA may then review and deploy standard PostgreSQL
+statistics DDL, run \texttt{ANALYZE}, and perform verification or rollback
+verification. The advisor-side PostgreSQL patch is confined to this private
+evaluation environment, so advice can continue after production becomes
+unavailable.
 
-Search is a replaceable consumer of the two CE-Replay interfaces. Our current
-advisor uses deterministic contextual maintenance-constrained search: greedy
-construction followed by ADD/DROP/SWAP local improvement under a fixed
-precedence and supplied workload. The search makes the contextual semantics
-operational, but it is not the primary novelty and no global optimum is
-claimed. The representation and its oracles remain useful to other consumers
-that require a faithful hypothetical estimate or a safe semantic dependency
-scope.
+Search is deliberately a consumer of the substrate rather than the novelty
+center. The release-qualified advisor uses deterministic contextual ADD-only
+search under a fixed maintenance constraint, an exact q-error objective,
+conservative candidate-to-query incidence reuse, and safe lower-bound pruning
+where applicable. The product does not claim ADD/DROP/SWAP search novelty or a
+global optimum. Richer moves remain development/library functionality and do
+not change the product algorithm described here.
 
-We evaluate the system along four dimensions. First, semantic-fidelity tests
-separate frozen-realization correctness from fresh-realization fidelity after
-physical deployment. Second, Census evaluates contextual candidate utility,
-including singleton signs, contextual rescues, non-monotone behavior, and a
-maintenance-feasible mixed design. Third, full and incremental replay are
-compared for exact move values and decisions, semantic work reduction, and
-operation-level timing at explicitly bounded measurement points. Fourth, the
-production-separated lifecycle is exercised through capture, unavailable-source
-offline advice, preflight, stock PostgreSQL deployment, verification,
-rollback, and clean-room reproduction, while independent DMV realizations
-provide bounded robustness evidence. These dimensions establish the supported
-claim boundary; they do not imply query-latency improvement, universal
-robustness, or general PostgreSQL coverage.
+The evaluation asks five bounded questions. First, do native hypothetical and
+physical states agree for the same persisted realization? Second, can one
+acquired repository support many representable configurations without
+per-design search-loop \texttt{ANALYZE}, while query-level reuse preserves move
+outcomes? We report operation counts, not a speedup over a physical-per-design
+baseline that has not been measured. Third, do native interactions make
+singleton utility insufficient for contextual physical design? Fourth, can
+stock production capture support offline advice, DBA-controlled deployment,
+and lifecycle verification? Fifth, how do fixed and selected designs behave
+across independent statistics realizations? Same-realization agreement is a
+correctness statement. Independent-realization behavior is a robustness
+statement: a future \texttt{ANALYZE} may produce different payloads, estimates,
+or selected designs without implying a substrate failure.
 
 This paper makes four contributions:
 
 \begin{enumerate}
-\item \textbf{Executable statistics-sensitive CE representation.} We preserve
-the supported PostgreSQL estimator's design-dependent applicability, winner
-selection, consumption, MCV-to-FD composition, payload-dependent numerical
-updates, and relevant precedence state as executable transitions over a
-hypothetical statistics design.
-\item \textbf{Dual semantic interfaces.} We derive an objective oracle and a
-counterfactual semantic dependency oracle from that same transition system,
-without claiming a new generic incremental-computation framework.
-\item \textbf{Production-separated advisor architecture.} We connect
-read-only capture from stock PostgreSQL to sealed offline advice and standard
-DBA-controlled recommendation and verification artifacts.
-\item \textbf{Validation and evidence.} We provide bounded evidence for
-semantic fidelity, contextual physical design, exact incremental evaluation,
-physical deployment closure, clean-room workflow reproduction, and independent-
-realization robustness.
+\item \textbf{Native extended-statistics what-if substrate.} We provide
+backend-local registration and ordered activation of supported PostgreSQL
+native MCV/FD payload states, including explicit \texttt{ABSENT\_NATIVE}, for
+representable hypothetical configurations.
+\item \textbf{Native-semantic design evaluation.} Configuration evaluation
+delegates statistics applicability, precedence, consumption, composition, and
+cardinality estimation to PostgreSQL while reusing unaffected query
+contributions. We claim neither a new CE nor a new search algorithm.
+\item \textbf{Production-separated advisor realization.} We connect
+read-only capture from stock PostgreSQL to private patched-advisor execution,
+offline recommendation, and an ordinary stock-PostgreSQL deployment,
+\texttt{ANALYZE}, and verification lifecycle.
+\item \textbf{Evaluation.} We provide bounded evidence for same-realization
+fidelity, contextual candidate behavior, operation counts and repeatability,
+production-separated closure, and independent-realization robustness. This is
+evidence, not a separate conceptual novelty claim.
 \end{enumerate}
 
 The validated scope is PostgreSQL 16.14, one base relation, a fixed supplied
-statistics target, arity-two MCV and functional-dependency statistics, and the
-supported predicate fragment. Broader mechanisms, joins, automatic target
-optimization, global search optimality, and runtime objectives remain outside
-this paper's claims.
+statistics target, arity-two MCV and FD statistics, and the supported predicate
+fragment. Broader mechanisms, joins, automatic target optimization, global
+search optimality, universal maintenance costs, and query-latency objectives
+remain outside the paper's claims.
