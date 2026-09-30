@@ -1,26 +1,190 @@
 \section{Problem and System Contract}
+\label{sec:problem}
 
-\subsection{Inputs and workload}
-\textit{Planning note: define workload $Q$, exact truth $N_q$, query weights,
-and the one-target-relation scope.}
+This section fixes the notation used by the native substrate and evaluator.
+The formulation fixes the system contract; workload-driven statistics
+selection itself is established prior art.  The variables below describe one
+bounded advisor run, not a new optimization formulation or a claim of global
+search optimality.
 
-\subsection{Candidate catalog and frozen realization}
-\textit{Planning note: define candidate set $S$, candidate definitions, and
-payload state $P_s(R)$ with \texttt{PRESENT}, \texttt{ABSENT\_NATIVE}, and
-\texttt{UNREGISTERED}; the latter is a system failure, while the former is a
-legitimate native absence.}
+\subsection{Workload and truth}
+
+The advisor receives a fixed supplied workload
+\[
+ Q=\{q_1,\ldots,q_m\}.
+\]
+Each query $q\in Q$ contains SQL and its supported predicate context, names
+one target base relation, and is bound to an externally supplied exact
+cardinality truth $N_q>0$.  The current product objective has no additional
+workload-weight field: query contributions are aggregated as a direct sum in
+query-identity order.  Truth is therefore an input to the contract, not a
+quantity collected or inferred by the private advisor.
+
+The scope is one target base relation and base-relation selection cardinality
+estimation.  A query may contain the supported predicates over that relation,
+but joins and multi-table execution are outside this contract.  The workload
+identity binds query IDs, SQL, effective membership, target relation, and
+truth identity; display order is not a semantic input.
+
+\subsection{Candidate catalog and realization}
+
+The workload- and dataset-dependent candidate catalog is
+\[
+ S=\{s_1,\ldots,s_n\}.
+\]
+Each candidate $s\in S$ identifies one relation and exactly two attributes,
+selects either PostgreSQL MCV or functional-dependency (``dependencies'')
+statistics, and carries a deterministic statistics-object definition.  The
+definition includes the catalog identity used by the advisor and a unique
+precedence rank.  It also has a maintenance cost under the fixed model below.
+The candidate universe is not a product constant: benchmark-specific counts
+such as 72 or 4,506 describe particular catalogs rather than supported limits.
+
+Let $R$ denote one \emph{advisor-derived statistics realization reconstructed
+from a persisted capture sample and compatible metadata}.  $R$ is not the
+production capture bundle itself and is not a promise about a future native
+\texttt{ANALYZE}.  It includes the ordinary statistics state and the native
+candidate payload states derived from that persisted sample.  Once a run
+starts, $R$ is fixed; the search does not resample or regenerate it for an
+individual design.
+
+For every candidate $s$, define
+\[
+ P_s(R)\in\{\operatorname{PRESENT}(p_s),\operatorname{ABSENT\_NATIVE}\}.
+\]
+Here $p_s$ is the non-empty native serialized payload produced by PostgreSQL
+for $s$ under $R$.  \texttt{ABSENT\_NATIVE} records that the candidate was
+registered and PostgreSQL legitimately produced no requested payload field;
+it is not an empty fabricated byte string.  \texttt{UNREGISTERED} is excluded
+from this mathematical domain: it is an acquisition, identity, or validation
+failure and therefore a system-invalid state rather than a statistical
+outcome.
+
+\begin{table}[t]
+\caption{Payload-state contract for a candidate $s$ under realization $R$.}
+\label{tab:payload-states}
+\centering
+\small
+\begin{tabular}{@{}p{0.27\columnwidth}p{0.46\columnwidth}p{0.17\columnwidth}@{}}
+\toprule
+State & Meaning & Valid design state? \\
+\midrule
+\texttt{PRESENT} & PostgreSQL produced and the repository retained a native payload. & yes \\
+\texttt{ABSENT\_NATIVE} & Registered candidate; PostgreSQL produced no requested native payload. & yes \\
+\texttt{UNREGISTERED} & Acquisition, identity, or system-contract failure. & no \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The distinction is operationally important.  A selected
+\texttt{ABSENT\_NATIVE} candidate remains a member of the design and has no
+fabricated payload; its maintenance cost is still charged to the candidate
+definition.  The adapter fails closed on \texttt{UNREGISTERED} rather than
+silently dropping the candidate.
 
 \subsection{Design and objective}
-\textit{Planning note: define $Y\subseteq S$, native estimate
-$CE(q,Y,R)$, the q-error objective, and the maintenance budget without
-claiming formulation novelty.}
 
-\subsection{Fixed target and configuration identity}
-\textit{Planning note: specify externally supplied target $T$ (default 100),
-that it is not optimized, target-specific maintenance modeling, and
-fail-closed compatibility.}
+A design is a membership set $Y\subseteq S$.  The system does not optimize an
+arbitrary permutation.  Instead, the catalog's unique precedence ranks derive
+the effective activation order
+\[
+ \pi(Y)=\operatorname{sort}_{\mathrm{precedence}}(Y),
+\]
+which is the ordered OID subset passed to the backend-local overlay.  Thus $Y$
+specifies membership while $\pi(Y)$ specifies the deterministic PostgreSQL
+ordering used for that membership.
 
-\subsection{Correctness and robustness contract}
-\textit{Planning note: separate same-realization correctness from
-independent-realization robustness; correctness is not robustness, and
-robustness is not design invariance.}
+For fixed $R$, $Y$, and $\pi(Y)$, let
+\[
+ \widehat{N}_q(Y,R)
+\]
+denote the estimate returned by PostgreSQL's native cardinality estimator for
+the target relation of query $q$.  This is an interface to native PostgreSQL
+through \texttt{EXPLAIN (FORMAT JSON)}, not a learned model or an external
+MCV/FD estimator.  The evaluator extracts the unique target-relation
+\texttt{Plan Rows} value and combines it with the externally supplied truth.
+
+For positive truth $N_q$, the supported q-error contribution is
+\[
+ qerr(q,Y,R)=
+ \max\left(
+ \frac{\max(\widehat{N}_q(Y,R),1)}{N_q},
+ \frac{N_q}{\max(\widehat{N}_q(Y,R),1)}
+ \right).
+\]
+The workload loss is the direct aggregate used by the implementation:
+\[
+ L(Y;R)=\sum_{q\in Q} qerr(q,Y,R).
+\]
+There is no implicit averaging, normalization, or unimplemented query weight
+in this contract.
+
+\subsection{Maintenance constraint and fixed target}
+
+Let $c(s)$ be the cost assigned by the calibrated maintenance model to
+candidate definition $s$, and let
+\[
+ C(Y)=\sum_{s\in Y}c(s).
+\]
+The feasible designs satisfy $C(Y)\le B$.  Cost is attached to the
+definition's mechanism and attributes under the fixed model; it does not
+change when $P_s(R)$ is \texttt{PRESENT} versus \texttt{ABSENT\_NATIVE}.
+The coefficients are target- and environment-specific resource parameters,
+not a universal PostgreSQL maintenance law or a causal per-candidate
+\texttt{ANALYZE} model.
+
+The global statistics target is an externally supplied configuration identity:
+\[
+ T=100\quad\text{by default}.
+\]
+The caller may supply another compatible positive target, but $T$ is fixed
+before capture, realization, advice, and search; it is not an optimization
+variable.  Payload realization depends on $T$, and maintenance-model
+compatibility is also target-specific.  The target is consequently bound into
+the problem, acquisition provenance, cache identity, and search configuration.
+An incompatible target or target-specific maintenance model fails closed;
+the workflow never silently reuses a $T=100$ model for another $T$.
+
+\subsection{System contract and correctness boundary}
+
+The bounded optimization problem is therefore:
+\[
+ \begin{aligned}
+ &\text{given } Q,\;N,\;S,\;R,\;T,\;c,\;B,\\
+ &\underset{Y\subseteq S}{\operatorname{minimize}}\quad L(Y;R)\\
+ &\text{subject to}\quad C(Y)\le B,\quad \pi(Y)\text{ fixed by catalog precedence}.
+ \end{aligned}
+\]
+This formalizes the current system contract.  Resource-constrained subset
+selection is established physical-design/statistics-management prior art; the
+paper does not claim formulation novelty, a global optimum, or an
+approximation guarantee.
+
+The correctness contract is same-realization correctness.  Fix one $R$, one
+design $Y$, the same ordinary-statistics state, the same candidate payload
+states $P_s(R)$, and the same effective order $\pi(Y)$.  Within the supported
+PostgreSQL 16.14 fragment, the hypothetical and physical paths should agree
+on the target-relation estimate vector and on $L(Y;R)$.  This does not require
+or imply that $P_s(R)$ equals the payload produced by a future fresh native
+\texttt{ANALYZE}.
+
+Robustness is a separate contract.  Given independent advisor-derived
+realizations $R_1,\ldots,R_k$, the evaluation may compare a fixed design's
+loss, the selected-design identities, or cross-evaluated losses.  Correctness
+is not robustness: the same-realization equality is a semantic fidelity claim.
+Robustness is not design invariance either: different realizations may produce
+different payloads, estimates, or selected memberships while remaining
+consistent with the correctness contract.
+
+Finally, the production/advisor boundary is explicit.  Production capture
+supplies the persisted sample, workload, exact truth, schema, and compatibility
+metadata.  The private advisor derives the ordinary statistics realization,
+the candidate payload repository, and the hypothetical search state.  Native
+payload bytes are not exported by the production capture bundle, and the
+capture contract does not claim native-\texttt{ANALYZE} sample equivalence.
+
+The contract is PostgreSQL 16.14 only, one base relation, fixed target,
+arity-two MCV/FD candidates, and supported base-relation predicates.  Joins,
+higher arity, other mechanisms, automatic target selection, latency
+objectives, global optimality, sample equivalence across fresh realizations,
+and design invariance are outside the claims.
