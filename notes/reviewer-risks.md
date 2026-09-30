@@ -2,16 +2,21 @@
 
 ## R1 — Existing hypothetical-statistics overlap
 
-A reviewer may identify HypoPG-like or other hypothetical extended-statistics
-support. The paper must compare the interfaces directly if making a novelty
-claim; current artifacts alone do not defeat this objection.
+HypoPG establishes backend-local planner-visible hypothetical objects, and
+AutoAdmin/DTA establish workload-driven what-if configuration analysis. The
+analogy to “HypoPG, but for extended statistics” remains serious. The paper
+must acknowledge that pattern and limit its distinction to native PG MCV/FD
+payload state, `ABSENT_NATIVE`, ordered activation, and native CE consumption;
+current artifacts do not establish priority over hypothetical-object systems.
 
-## R2 — Existing statistics advisors and test-server tuning
+## R2 — Existing statistics advisors, pending statistics, and test-server tuning
 
-Offline advice, candidate selection, and private test servers are established
-patterns. The bounded distinction is the backend-local native MCV/FD state
-overlay and its same-realization validation, not the existence of an advisor
-lifecycle.
+MNSA, StatAdvisor/DB2 statistical views, Oracle pending/imported statistics,
+PG19 extended-statistics restore, offline advisors, and private test servers
+establish the selection, testing, import, and lifecycle premises. The paper
+must not claim those premises as novel. The bounded distinction is the
+PostgreSQL-native backend-local extstats subset overlay and its same-realization
+validation; direct apples-to-apples competitor measurements remain absent.
 
 ## R3 — Patch plus conventional search
 
