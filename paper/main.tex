@@ -5,20 +5,39 @@
 \usepackage{booktabs}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\setlength{\emergencystretch}{3em}
 
 \renewcommand\vldbdoi{XX.XX/XXX.XX}
 \renewcommand\vldbpages{XXX--XXX}
 \renewcommand\vldbavailabilityurl{https://github.com/1951123/pg-extstats-advisor}
 
 \begin{document}
-\title{TITLE PLACEHOLDER: pg-extstats-advisor}
+\title{Executable Cardinality-Estimation Semantics for PostgreSQL Statistics Physical Design}
 \author{AUTHOR METADATA PENDING}
 \affiliation{\institution{AFFILIATION METADATA PENDING}\city{CITY METADATA PENDING}\country{COUNTRY METADATA PENDING}}
 \email{EMAIL-METADATA-PENDING@example.invalid}
 
 \begin{abstract}
-ABSTRACT PLACEHOLDER. This skeleton is intentionally not a formal manuscript
-rewrite; claims and evidence are frozen in the planning and provenance notes.
+Selecting extended statistics for a supplied workload is a physical-design
+problem: the effect of one object depends on the other selected objects because
+the estimator executes configuration-dependent control and state transitions.
+Independent candidate scores therefore cannot reliably represent the design
+space. We present CE-Replay, a workload-specialized, design-parametric,
+executable representation of the supported statistics-sensitive estimator
+transitions. It exposes two interfaces from the same transition system: an
+objective oracle for hypothetical cardinality estimates and a semantic
+dependency oracle for counterfactual move invalidation. The surrounding
+pg-extstats-advisor keeps production PostgreSQL stock: a read-only production
+capture seals a frozen realization, an offline advisor evaluates hypothetical
+designs without production credentials, and the result is a recommendation for
+DBA-controlled PostgreSQL deployment. Within PostgreSQL 16.14 conjunctive base-relation
+restrictions, arity-two MCV and functional-dependency statistics, and the
+supported predicate fragment, we validate native semantic fidelity, contextual
+and non-monotone candidate behavior, exact incremental move evaluation, and
+physical deployment and clean-room workflow closure. Independent DMV
+realizations provide bounded robustness evidence rather than an invariance
+claim. The result is a scoped physical-design system, not a general
+PostgreSQL cardinality estimator, a global optimizer, or a latency guarantee.
 \end{abstract}
 \maketitle
 \vldbtopmatter
@@ -37,4 +56,3 @@ rewrite; claims and evidence are frozen in the planning and provenance notes.
 \bibliographystyle{ACM-Reference-Format}
 \bibliography{references}
 \end{document}
-
