@@ -1,0 +1,36 @@
+\section{Hypothetical Extended-Statistics Substrate}
+
+\subsection{Design goals}
+\textit{Planning note: require no per-design physical extstats deployment or
+search-loop \texttt{ANALYZE}, retain native PostgreSQL CE as authority, and
+keep hypothetical state backend-local.}
+
+\subsection{Candidate payload repository}
+\textit{Planning note: describe derivation of native MCV/FD payloads,
+serialization through native mechanisms, and retention of either payload or
+\texttt{ABSENT\_NATIVE}; the repository belongs to the advisor rather than
+the capture bundle.}
+
+\subsection{Backend-local registration}
+\textit{Planning note: describe candidate identity registration, shell/OID
+binding, payload-byte or absent-marker registration, and the absence of
+production catalog deployment.}
+
+\subsection{Ordered activation}
+\textit{Planning note: define the active candidate subset, effective ordering
+and precedence, and supported representable configurations without claiming
+exhaustive subset enumeration.}
+
+\subsection{Native planner hooks}
+\textit{Planning note: explain how the PostgreSQL lookup path sees overlay
+state while native code performs applicability, winner selection, clause
+consumption, MCV/FD composition, deserialization, and numerical CE.}
+
+\subsection{Isolation and state lifetime}
+\textit{Planning note: establish backend-local lifetime, no persistent
+hypothetical deployment, and standard PostgreSQL DDL for final physical
+deployment.}
+
+\subsection{Supported substrate boundary}
+\textit{Planning note: freeze PostgreSQL 16.14, one base relation, arity-two
+MCV/FD statistics, fixed target, and the supported predicate fragment.}

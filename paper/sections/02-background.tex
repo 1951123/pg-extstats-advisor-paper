@@ -1,4 +1,21 @@
 \section{Background and Motivation}
-\textit{Planning skeleton only; reusable legacy material is identified in the
-old-to-new section map.}
 
+\subsection{PostgreSQL extended statistics}
+\textit{Planning note: introduce \texttt{CREATE STATISTICS}, MCV and
+functional-dependency statistics, \texttt{ANALYZE}, the
+\texttt{pg\_statistic\_ext} catalogs, and the fixed statistics target.}
+
+\subsection{Why configuration evaluation is difficult}
+\textit{Planning note: distinguish a statistics definition from its
+data-dependent payload, and motivate the cost of physical materialization,
+repeated \texttt{ANALYZE}, and contextual extstats interactions.}
+
+\subsection{Existing what-if and statistics-management approaches}
+\textit{Planning note: briefly place MNSA, AutoAdmin/DTA, HypoPG,
+StatAdvisor/DB2, Oracle pending/imported statistics, and PostgreSQL 19
+restore in the design space without duplicating Section 9.}
+
+\subsection{Design alternatives}
+\textit{Planning note: contrast physical-per-design evaluation, external CE
+emulation, and native-state virtualization; CE-Replay appears here only as
+the historical external-emulation alternative.}

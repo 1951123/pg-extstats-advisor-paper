@@ -17,6 +17,43 @@ CE-Replay centerpiece becomes historical context and a comparison point.
 | 9 Related Work | Position the mechanism honestly | Distinction is native-state virtualization, not generic theory or search novelty | reviewer risks |
 | 10 Discussion and Conclusion | State limits and implications | Claims remain within PG16.14 validated scope | non-claims/gaps |
 
+## Technical-section subsection skeleton
+
+### 2. Background and Motivation
+
+2.1 PostgreSQL extended statistics; 2.2 Why configuration evaluation is
+difficult; 2.3 Existing what-if and statistics-management approaches; 2.4
+Design alternatives.
+
+### 3. Problem and System Contract
+
+3.1 Inputs and workload; 3.2 Candidate catalog and frozen realization; 3.3
+Design and objective; 3.4 Fixed target and configuration identity; 3.5
+Correctness and robustness contract.
+
+### 4. Hypothetical Extended-Statistics Substrate
+
+4.1 Design goals; 4.2 Candidate payload repository; 4.3 Backend-local
+registration; 4.4 Ordered activation; 4.5 Native planner hooks; 4.6 Isolation
+and state lifetime; 4.7 Supported substrate boundary.
+
+### 5. Native-Semantic What-If Evaluation
+
+5.1 Reconstructing a frozen realization; 5.2 Evaluating a design; 5.3 No
+search-time materialization; 5.4 Query-level conservative reuse; 5.5 Safe
+objective lower bounds; 5.6 Correctness boundary.
+
+### 6. Advisor Search and Maintenance Constraint
+
+6.1 Search as a substrate consumer; 6.2 Product search; 6.3 Maintenance
+constraint; 6.4 Contextual utility; 6.5 Termination and nonclaims.
+
+### 7. Production-Separated Architecture
+
+7.1 Trust boundary; 7.2 Capture bundle; 7.3 Offline advice; 7.4 DBA-controlled
+deployment; 7.5 Rollback and verification; 7.6 Reproducibility and
+release-qualified path.
+
 ## Evaluation layout
 
 ### 8.1 Setup and scope

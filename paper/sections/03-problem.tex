@@ -1,3 +1,26 @@
-\section{Problem Formulation and System Contract}
-\textit{Planning skeleton only; no new technical claim is introduced here.}
+\section{Problem and System Contract}
 
+\subsection{Inputs and workload}
+\textit{Planning note: define workload $Q$, exact truth $N_q$, query weights,
+and the one-target-relation scope.}
+
+\subsection{Candidate catalog and frozen realization}
+\textit{Planning note: define candidate set $S$, candidate definitions, and
+payload state $P_s(R)$ with \texttt{PRESENT}, \texttt{ABSENT\_NATIVE}, and
+\texttt{UNREGISTERED}; the latter is a system failure, while the former is a
+legitimate native absence.}
+
+\subsection{Design and objective}
+\textit{Planning note: define $Y\subseteq S$, native estimate
+$CE(q,Y,R)$, the q-error objective, and the maintenance budget without
+claiming formulation novelty.}
+
+\subsection{Fixed target and configuration identity}
+\textit{Planning note: specify externally supplied target $T$ (default 100),
+that it is not optimized, target-specific maintenance modeling, and
+fail-closed compatibility.}
+
+\subsection{Correctness and robustness contract}
+\textit{Planning note: separate same-realization correctness from
+independent-realization robustness; correctness is not robustness, and
+robustness is not design invariance.}

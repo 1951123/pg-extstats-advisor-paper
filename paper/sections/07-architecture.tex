@@ -1,0 +1,29 @@
+\section{Production-Separated Architecture}
+
+\subsection{Trust boundary}
+\textit{Planning note: separate stock PostgreSQL and read-only capture from
+the patched private advisor, with no production credentials during offline
+advice.}
+
+\subsection{Capture bundle}
+\textit{Planning note: define the sample, workload, truth, schema, and
+compatibility metadata in the bundle, and state explicitly that it contains
+no extended-statistics payload bytes.}
+
+\subsection{Offline advice}
+\textit{Planning note: trace realization reconstruction, payload
+acquisition/cache, hypothetical search, and recommendation-artifact
+generation.}
+
+\subsection{DBA-controlled deployment}
+\textit{Planning note: cover preflight, standard \texttt{CREATE STATISTICS}
+or \texttt{ALTER STATISTICS}, \texttt{ANALYZE}, and verification.}
+
+\subsection{Rollback and verification}
+\textit{Planning note: define rollback DDL and absence verification, without
+claiming restoration of the old statistics realization.}
+
+\subsection{Reproducibility and release-qualified path}
+\textit{Planning note: describe Docker clean-room execution on PG16.14,
+semantic reproducibility rather than byte-level reproducibility, and the fact
+that bare-host/VM execution is not release-qualified.}

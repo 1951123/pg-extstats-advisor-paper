@@ -1,0 +1,31 @@
+\section{Native-Semantic What-If Evaluation}
+
+\subsection{Reconstructing a frozen realization}
+\textit{Planning note: distinguish the capture bundle from the
+advisor-derived payload repository and trace persisted sample to staged
+relation to payload acquisition/cache.}
+
+\subsection{Evaluating a design}
+\textit{Planning note: define the conceptual pipeline
+$Y\rightarrow$ register/activate $Y\rightarrow$ \texttt{EXPLAIN (FORMAT
+JSON)} $\rightarrow$ base-relation estimate $\rightarrow$ q-error
+contribution.}
+
+\subsection{No search-time materialization}
+\textit{Planning note: state that acquisition/reconstruction occurs outside
+the per-design loop, with no per-move CREATE/DROP/ANALYZE and no measured
+speedup claim.}
+
+\subsection{Query-level conservative reuse}
+\textit{Planning note: map a candidate move to its incidence-affected query
+set, replan affected queries, and reuse unaffected contributions; incrementality
+stops at query granularity.}
+
+\subsection{Safe objective lower bounds}
+\textit{Planning note: document current exact q-error lower-bound pruning only
+as release-qualified behavior/evidence, not as a new search theory.}
+
+\subsection{Correctness boundary}
+\textit{Planning note: define same-realization comparison using the same
+payload and effective precedence for native hypothetical versus physical
+states.}
