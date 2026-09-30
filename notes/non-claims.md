@@ -1,11 +1,26 @@
-# Explicit non-claims
+# Explicit non-claims — Strategy B
 
-The paper must not claim global optimization, a new general CE algorithm,
-general PostgreSQL CE reproduction, arbitrary joins, multi-table support,
-automatic target optimization, native-sample equivalence, design invariance
-across samples, latency improvement from q-error, byte-level Docker
-reproducibility, automatic production deployment, support for all PostgreSQL
-versions, or universal maintenance coefficients. Less semantic work is not a
-guarantee of lower end-to-end optimizer wall time. Frozen and fresh payloads
-need not be identical, and robustness across realizations is not design
-invariance.
+The paper must not claim:
+
+- a new cardinality-estimation algorithm or full PostgreSQL CE reproduction;
+- a generic partial-evaluation, dependency-oracle, or incremental-computation
+  theory;
+- a global optimum, approximation guarantee, or search novelty;
+- speedup or quantified time savings without a physical-per-design baseline;
+- arbitrary PostgreSQL statistics mechanisms, joins, versions, expressions,
+  or DBMS portability;
+- that the capture bundle contains native payload bytes or that its sample is
+  native-`ANALYZE` equivalent;
+- invariant designs across realization samples or universal robustness;
+- universal PostgreSQL maintenance coefficients or a causal per-candidate
+  `ANALYZE` cost law;
+- automatic production deployment, rollback repair, byte-reproducible Docker,
+  or a complete security boundary.
+
+“Arbitrary hypothetical configurations” means representable ordered subsets of
+the frozen supported candidate catalog only. “Without `ANALYZE`” means without
+per-design/per-move search-time `ANALYZE`; acquisition or shell recreation may
+perform the required pre-search analyze step.
+
+The legacy CE-Replay IR and its semantic oracle remain historical evidence and
+are not the current advisor implementation.

@@ -1,55 +1,56 @@
-# Paper structure (outline only)
+# Paper structure (Strategy B planning outline)
 
-This is a planning artifact, not formal manuscript prose. The ten-section
-architecture is frozen below; section 8 has an explicit six-part evaluation
-layout.
+This is a planning artifact, not manuscript prose. The structure is
+re-centered on native extended-statistics state virtualization; the old
+CE-Replay centerpiece becomes historical context and a comparison point.
 
-| Section | Purpose | Central claim | Reusable legacy source | New system material | Evidence dependencies |
-|---|---|---|---|---|---|
-| 1 Introduction | Motivate statistics-sensitive physical design | contextual estimator transitions require executable, design-parametric evaluation | Legacy introduction, REWRITE | thesis and advisor framing | claims matrix, thesis |
-| 2 Background and Motivation | Establish extstats and design context | supported mechanisms and prior work define the boundary | Legacy background, KEEP + UPDATE | fixed-target/product context | bibliography, supported scope |
-| 3 Problem Formulation and System Contract | Define inputs, constraints, and boundaries | fixed target, frozen realization, maintenance budget, and capture contract are explicit | Legacy problem formulation, KEEP + EXTEND | production/capture contract | supported-scope.md, evidence policy |
-| 4 pg-extstats-advisor Architecture | Explain production/advisor separation | sealed capture enables offline advice without production credentials | NEW architecture material | capture, advisor, recommendation lifecycle | M2.30–M2.33 |
-| 5 Statistics-Sensitive CE Semantics | Define native transition fragment | applicability, precedence, consumption, composition, and numerical updates stay executable | Legacy CE semantics, KEEP | scope hardening and realization terminology | source/audit evidence |
-| 6 CE-Replay | Explain executable representation and two oracles | one transition system yields objective and counterfactual dependency interfaces | Legacy CE-Replay, KEEP | product terminology and contract | replay artifacts |
-| 7 Statistics Physical Design | Connect semantics to contextual search | feasible local design can use contextual evaluation without a global-optimality claim | Legacy search/design, KEEP + SHORTEN | fixed-T workflow | Census search artifacts |
-| 8 Evaluation | Answer RQ1–RQ4 | fidelity, contextual design, incremental exactness, closure, and robustness are separately evidenced | Legacy evaluation, REWRITE / REORGANIZE | current evidence integration | RQ evidence map |
-| 9 Related Work | Position novelty boundary | contribution is the represented statistics-sensitive computation and its dual use, not generic theory | Legacy related work, KEEP + UPDATE | explicit boundary language | bibliography, reviewer risks |
-| 10 Discussion, Limitations, and Conclusion | State implications and boundaries | claims remain within validated scope and evidence | Legacy conclusion, REWRITE | product/research split | non-claims, claims matrix |
+| Section | Purpose | Central claim | Evidence |
+|---|---|---|---|
+| 1 Introduction | Motivate statistics-sensitive physical design | A native-semantic what-if substrate avoids per-design materialization within a bounded scope | thesis, claims matrix |
+| 2 Background | Establish extstats, native CE, and physical-design context | Problem and prior-art boundaries are explicit | supported scope, related work |
+| 3 Problem and System Contract | Define fixed target, realization, budget, and capture contract | Inputs and non-claims are reproducible | contract/docs |
+| 4 Hypothetical ExtStats Substrate | Explain backend-local registration/activation and native hooks | Statistics state is virtualized while CE semantics remain in PostgreSQL | patch, adapter |
+| 5 Native-Semantic What-If Evaluation | Define acquisition/cache, activation, EXPLAIN, and query-level reuse | One repository supports many supported configurations without per-move ANALYZE | E1/E3 |
+| 6 Advisor Search and Maintenance Constraint | Treat search as a replaceable client | Contextual local design is evaluated under fixed maintenance scope | E2, Census search |
+| 7 Production-Separated Architecture | Explain capture/advice/deployment lifecycle | Stock production can be separated from offline advice | E4 |
+| 8 Evaluation | Answer RQ1–RQ5 | Fidelity, bounded work, contextuality, closure, and robustness are separately evidenced | E1–E5 |
+| 9 Related Work | Position the mechanism honestly | Distinction is native-state virtualization, not generic theory or search novelty | reviewer risks |
+| 10 Discussion and Conclusion | State limits and implications | Claims remain within PG16.14 validated scope | non-claims/gaps |
 
-## Section 8 evaluation layout
+## Evaluation layout
 
-### 8.1 Experimental setup and scope
+### 8.1 Setup and scope
 
-Workloads, PostgreSQL 16.14, fixed target, supported fragment, realization
-terminology, metrics, and evidence policy.
+Workloads, PostgreSQL 16.14, fixed target, candidate/payload states, metrics,
+and realization terminology.
 
-### 8.2 RQ1 — Semantic fidelity
+### 8.2 RQ1 — Native-semantic fidelity
 
-RQ1a frozen-realization correctness and RQ1b fresh-realization fidelity;
-explicitly distinguish replay/native agreement from payload realization drift.
+Same-realization hypothetical/physical fidelity; separate payload drift from
+semantic mismatch.
 
-### 8.3 RQ2 — Contextual physical design
+### 8.3 RQ2 — State virtualization and bounded work
 
-Singleton-positive/zero/negative behavior, contextual rescues, non-monotone
-utility, and the maintenance-feasible Census design result.
+One acquisition/cache, no per-move `ANALYZE`, incidence reuse, operation
+counts, and exact repeatability. No speedup claim without a physical baseline.
 
-### 8.4 RQ3 — Incremental evaluation
+### 8.4 RQ3 — Contextual design
 
-Semantic work reduction, exact move-value/decision preservation, and valid
-operation-level timing boundaries.
+Singleton signs, contextual rescues, non-monotone utility, and one
+maintenance-constrained design result.
 
-### 8.5 RQ4a — End-to-end system closure
+### 8.5 RQ4 — Production closure
 
-Capture, unavailable production, offline advise, preflight, deployment,
-`ANALYZE`, verification, rollback, and Docker clean-room lifecycle.
+Capture, unavailable production, offline advice, preflight, deployment,
+`ANALYZE`, verification, rollback, and clean-room lifecycle.
 
-### 8.6 RQ4b — Realization robustness
+### 8.6 RQ5 — Realization robustness
 
-Bounded DMV M2.19/M2.20 evidence across independent realizations; robustness is
-not design invariance.
+DMV M2.19/M2.20 fixed-design and design-selection evidence; robustness is not
+design invariance.
 
-The legacy manuscript source is `extended-stats-optim-v3/paper/pvldb2027` at
-the recorded commit in `provenance/source-repositories.md`. It is source
-material only; do not copy its generated PDF or experiment tree.
+## Historical material
 
+Legacy CE-Replay IR, GreedyCover, semantic dependency machinery, old search,
+and old fidelity tables remain linked evidence or appendix material. They must
+not be described as the current product implementation.

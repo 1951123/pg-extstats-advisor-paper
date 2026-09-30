@@ -1,34 +1,42 @@
-# Frozen contribution plan
+# Frozen contribution plan — Strategy B
 
-## Contribution 1 — Executable statistics-sensitive CE representation
+## Contribution 1 — Backend-local native extended-statistics what-if substrate
 
-Represent the supported PostgreSQL statistics-sensitive estimator computation
-as executable, design-parametric transitions. The representation keeps
-applicability, winner selection, clause/semantic-dimension consumption,
-MCV-to-FD composition, payload-dependent numerical updates, and relevant
-PostgreSQL realization/precedence state executable for each hypothetical design.
-Problem formulation is supporting material, not the primary novelty claim.
+Provide a PostgreSQL 16.14 backend-local overlay that registers native MCV/FD
+payloads (or explicit `ABSENT_NATIVE` states), activates an ordered
+hypothetical subset, and lets PostgreSQL's own estimator consume that state.
+This is the primary novelty candidate, bounded to one base relation, fixed
+target, arity-two MCV/FD, and the supported predicate fragment. It is not a
+generic HypoPG replacement or a new cardinality estimator.
 
-## Contribution 2 — Dual semantic interfaces
+## Contribution 2 — Native-semantic design evaluation interface
 
-Expose an objective oracle and a counterfactual semantic-dependency oracle from
-the same executable transition system. This is not claimed as a generic
-incremental-computation framework.
+Build the evaluator and deterministic search client around the substrate:
+fixed payload acquisition/cache, native `EXPLAIN`, exact q-error objective,
+and conservative candidate-to-query reuse. This is a systems method and
+interface contribution, not a generic semantic dependency oracle or a new
+search algorithm. The release-qualified advisor uses ADD-only local search;
+the library's ADD/DROP/SWAP mode remains a development interface.
 
 ## Contribution 3 — Production-separated advisor architecture
 
-Separate stock PostgreSQL production, read-only capture, a sealed frozen
-realization, offline advice without production credentials, standard PostgreSQL
-recommendation DDL, and preflight, deployment-verification, and
-rollback-verification stages. Docker is a validation path, not the contribution.
+Separate stock PostgreSQL read-only capture, a sealed fixed-T bundle, private
+advisor reconstruction, offline recommendation, DBA-controlled standard DDL,
+deployment verification, rollback verification, and clean-room lifecycle.
+Docker and the maintenance model are enabling engineering, not independent
+novelty claims.
 
-## Contribution 4 — Validation and evidence
+## Contribution 4 — Evidence and boundaries
 
-Validate semantic fidelity, contextual interactions, incremental exactness,
-realization robustness, physical deployment closure, and Docker clean-room
-lifecycle behavior.
+Validate same-realization hypothetical/physical fidelity, contextual utility,
+operation-count/repeatability, production closure, and bounded DMV realization
+robustness. State explicitly that no physical-per-design speedup baseline,
+native-sample equivalence, global-optimality guarantee, or universal
+maintenance law is claimed.
 
-Contribution 1 plus Contribution 2 are the main research novelty. Contribution
-3 is the systems contribution. Contribution 4 is evidence, not a separate
-conceptual novelty claim. Search, Docker, sampling, and target optimization
-are not independent contributions.
+## Superseded contribution hierarchy
+
+The former “executable CE-Replay representation plus dual objective and
+semantic-dependency oracles” was the Strategy-A framing. Legacy CE-Replay is
+retained as a historical external-semantic design alternative and evidence
+source; it is not the implementation mechanism of the current advisor.

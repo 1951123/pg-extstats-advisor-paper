@@ -1,24 +1,29 @@
-# Main text versus appendix freeze
+# Main text versus appendix freeze — Strategy B
 
 ## Main text
 
-- Core semantic fidelity, with frozen- and fresh-realization regimes separated.
-- Contextual-interaction evidence: singleton signs, contextual rescues, and
-  one maintenance-constrained design result.
-- Incremental exactness and semantic work reduction, with valid timing scope.
-- Production-separated lifecycle from capture through verification and
-  rollback.
-- Concise multi-realization robustness evidence.
+- Backend-local native extended-statistics state virtualization and exact
+  scope.
+- Native PostgreSQL CE authority and same-realization hypothetical/physical
+  fidelity.
+- One acquisition/cache, no per-move `ANALYZE`, conservative query-level reuse,
+  and operation-count evidence without a speedup claim.
+- Contextual design evidence and the fixed-T maintenance constraint.
+- Production-separated capture/advice/deployment/verification lifecycle.
+- Concise DMV realization-robustness evidence.
+- Explicit novelty boundary against generic advisors, hypothetical interfaces,
+  caching, and search novelty.
 
 ## Appendix or linked artifact
 
-- Target-grid experiments.
-- Reservoir/native target-selection mismatch.
-- Detailed M2.26–M2.28 root-cause work.
-- Exhaustive source-function mapping.
-- Large candidate tables.
-- Extended negative experiments.
+- Legacy CE-Replay IR, GreedyCover, semantic dependency oracle, and old search
+  implementation as historical alternatives.
+- Detailed source-function mapping and payload formats.
+- Target-grid, reservoir/native, acquisition-fidelity, and extended negative
+  studies.
+- Large candidate tables, full move logs, and complete lifecycle transcripts.
+- Any future physical-per-design baseline if one is measured.
 
-No evidence is deleted or reclassified as invalid by this presentation
-decision; details remain in their authoritative repositories.
-
+No evidence is deleted or reclassified as invalid; the presentation role is
+changed so that legacy CE-Replay is not mistaken for the current product
+mechanism.

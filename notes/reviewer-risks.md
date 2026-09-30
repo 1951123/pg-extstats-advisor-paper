@@ -1,43 +1,54 @@
-# Reviewer risks retained for drafting
+# Reviewer risks retained for Strategy B drafting
 
-## R1 — Novelty versus specialization
+## R1 — Existing hypothetical-statistics overlap
 
-A skeptical reviewer may view CE-Replay as a PostgreSQL-specific
-specialization of configuration-parametric, partial-evaluation, or
-incremental-computation ideas. Do not deny that prior art. Do not claim a new
-general representation theory. Make the represented object explicit:
-statistics-sensitive estimator state transitions. Make the consequence
-explicit: the same executable transitions determine hypothetical CE and
-counterfactual semantic invalidation. Present PostgreSQL MCV/FD as the
-validated instantiation.
+A reviewer may identify HypoPG-like or other hypothetical extended-statistics
+support. The paper must compare the interfaces directly if making a novelty
+claim; current artifacts alone do not defeat this objection.
 
-## R2 — Scope narrowness
+## R2 — Existing statistics advisors and test-server tuning
 
-The supported scope is PostgreSQL 16.14, one base relation, arity-two MCV and
-functional dependencies, and bounded predicate forms.
+Offline advice, candidate selection, and private test servers are established
+patterns. The bounded distinction is the backend-local native MCV/FD state
+overlay and its same-realization validation, not the existence of an advisor
+lifecycle.
 
-## R3 — Search not novel
+## R3 — Patch plus conventional search
 
-Search is a deterministic constrained use of the semantic oracles, not a new
-global optimizer.
+The PostgreSQL patch and deterministic ADD-only search are engineering and
+algorithmic scaffolding. Do not claim search novelty or a new CE algorithm;
+make the substrate/interface the primary mechanism claim.
 
-## R4 — Maintenance model is scoped
+## R4 — “Just cache payloads” reduction
 
-Maintenance costs are target- and environment-specific empirical proxies, not
-universal PostgreSQL costs.
+Caching alone does not express ordered activation, native catalog precedence,
+ABSENT_NATIVE behavior, or native CE consumption. These details must be shown
+as the tested interface, while avoiding an unsupported claim of general
+semantic theory.
 
-## R5 — Sampling realization uncertainty
+## R5 — No speedup baseline
 
-Independent native realizations can select different designs while retaining
-bounded near-equivalent outcomes. This is accepted uncertainty, not a replay
-correctness failure.
+Operation counts and no per-move `ANALYZE` do not imply wall-clock speedup. The
+paper must state that a physical-per-design baseline was not measured.
 
-## R6 — CE quality does not imply runtime improvement
+## R6 — Scope narrowness
 
-Q-error and evaluator-cost evidence must not be presented as query-latency
-improvement.
+The supported scope is PostgreSQL 16.14, one base relation, fixed target,
+arity-two MCV/FD, and bounded predicates. “Arbitrary configurations” means
+only representable subsets/orderings of this catalog.
 
-The production-capture separation, deployment lifecycle, and Docker clean-room
-artifacts mitigate earlier concerns about practical pipeline completeness, but
-they do not remove the scientific scope boundaries above.
+## R7 — Search and incrementality boundaries
 
+The release-qualified advisor is ADD-only. Query-level incidence reuse is
+conservative; query-internal semantic incremental replay was not migrated.
+
+## R8 — Maintenance and realization uncertainty
+
+Maintenance costs are target- and environment-specific proxies. Independent
+realizations may select different designs with near-equivalent outcomes;
+frozen payloads are not native-sample equivalence.
+
+## R9 — Portability and operations
+
+Fail-closed PG16.14 compatibility, DBA-controlled deployment, security caveats,
+and no byte-level Docker reproducibility are explicit limitations.
