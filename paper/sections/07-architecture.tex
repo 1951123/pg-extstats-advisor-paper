@@ -1,29 +1,148 @@
 \section{Production-Separated Architecture}
 
+The hypothetical overlay is an evaluation mechanism, not a production
+deployment requirement.  The validated architecture therefore separates a
+stock PostgreSQL production zone from a private advisor zone that contains the
+patched PostgreSQL backend.  Production remains ordinary PostgreSQL 16.14;
+the patch is used only to register and evaluate hypothetical extended-
+statistics state before a recommendation is returned.
+
 \subsection{Trust boundary}
-\textit{Planning note: separate stock PostgreSQL and read-only capture from
-the patched private advisor, with no production credentials during offline
-advice.}
+
+The production zone contains stock PostgreSQL 16.14, the source workload and
+truth, and a read-only capture role.  Capture does not install the
+hypothetical overlay, create statistics objects, run \texttt{ANALYZE}, or
+execute deployment DDL.  The advisor zone contains a private patched
+PostgreSQL 16.14 instance, the derived frozen realization and payload
+repository, the native evaluator, and the fixed-target search client.  After
+capture has completed, \texttt{advise} requires no production credentials; it
+connects only to the private advisor database and the transferred bundle.
+
+This separation is an operational boundary rather than a novelty claim.
+Offline and test-server tuning are established patterns.  The architectural
+role here is to confine the PostgreSQL-specific what-if mechanism to
+evaluation while keeping the deployment target conventional.
 
 \subsection{Capture bundle}
-\textit{Planning note: define the sample, workload, truth, schema, and
-compatibility metadata in the bundle, and state explicitly that it contains
-no extended-statistics payload bytes.}
+
+The production-side contract is the sealed
+\texttt{production-capture-}\allowbreak\texttt{bundle-v1}.  It records environment and
+compatibility metadata, portable relation/schema metadata, the supplied
+workload, exact full-data truth, the persisted acquisition sample, snapshot
+and sampling provenance, and component and root digests.  The bundle is
+integrity-checked before transfer and again before advice.  Its sensitivity
+declaration is explicit: sampled row values, SQL, constants, and exact truth
+may be sensitive, while the bundle is not anonymized or encrypted.
+
+The bundle deliberately does \emph{not} contain ordinary
+\texttt{pg\_statistic} rows, native extended-statistics payload bytes, the
+advisor payload repository, search state, or a recommendation.  Digests and
+the sealed flag provide integrity and tamper detection, not confidentiality;
+encryption, access control, transport protection, and retention remain
+external operational responsibilities.
+
+Capture persists the data-derived inputs from which the private advisor
+reconstructs the frozen statistics realization used for one advice run.  It
+does not export frozen extended-statistics payloads or directly export the
+advisor realization.  The persisted sample is authoritative for replay of
+that bundle, but is explicitly not claimed to be equivalent to a future
+native PostgreSQL \texttt{ANALYZE} sample.
 
 \subsection{Offline advice}
-\textit{Planning note: trace realization reconstruction, payload
-acquisition/cache, hypothetical search, and recommendation-artifact
-generation.}
+
+The offline path first validates the sealed bundle, exact PostgreSQL version,
+fixed target, schema, sample method, and workload scope.  It then stages the
+persisted sample in a private advisor relation and reconstructs the
+advisor-side ordinary-statistics state.  On a repository miss, candidate
+shells are created in that private database, the fixed target is applied, and
+the required relation-grouped acquisition work derives native MCV/FD payloads
+or explicit \texttt{ABSENT\_NATIVE} states.  On a cache hit, the advisor
+recreates the shells and validates the cached repository before reuse.  Any
+such acquisition or shell-realization \texttt{ANALYZE} is pre-search work,
+not a per-design search operation.
+
+The native evaluator is then constructed over the frozen realization and the
+backend-local overlay.  The fixed-$T$ contextual ADD-only search evaluates
+representable designs, records the selected design and objective, and emits a
+recommendation artifact.  Production may become unavailable after capture:
+the advisor consumes the sealed bundle and its private PostgreSQL instance
+without reconnecting to the source database or requiring production
+credentials.
 
 \subsection{DBA-controlled deployment}
-\textit{Planning note: cover preflight, standard \texttt{CREATE STATISTICS}
-or \texttt{ALTER STATISTICS}, \texttt{ANALYZE}, and verification.}
+
+The recommendation records selected candidate IDs and definitions, the fixed
+target, selected maintenance cost, baseline/final objective metadata,
+problem and realization digests, search termination metadata, standard
+deployment SQL, and reverse rollback SQL.  It translates hypothetical state
+back into ordinary PostgreSQL DDL: \texttt{CREATE STATISTICS} with the
+selected MCV or dependency kind, \texttt{ALTER STATISTICS ... SET STATISTICS
+T}, and \texttt{ANALYZE} for the target relation.
+
+Deployment is intentionally DBA-controlled.  A read-only preflight checks
+the exact PostgreSQL version and target, relation and portable schema
+compatibility, required catalog visibility, target overrides, deterministic
+name collisions, and equivalent existing statistics objects.  A passing
+preflight is compatibility evidence, not authorization to deploy.  The DBA
+reviews the recommendation and SQL under normal change control, chooses the
+maintenance window, executes the DDL and \texttt{ANALYZE} manually, and then
+invokes verification.  The advisor does not execute production DDL, change
+the global target, schedule or run production \texttt{ANALYZE}, or perform an
+automatic rollback.
 
 \subsection{Rollback and verification}
-\textit{Planning note: define rollback DDL and absence verification, without
-claiming restoration of the old statistics realization.}
+
+Deployment verification distinguishes a statistics definition from its
+materialized native state.  It checks the expected \texttt{pg\_statistic\_ext}
+definitions, schema, kind, keys, and target, and checks for the corresponding
+\texttt{pg\_statistic\_ext\_data} row.  A definition without a data row is
+reported as incomplete and the verifier recommends running \texttt{ANALYZE};
+the verifier never runs it.  A data row can still contain a legitimate native
+NULL MCV or dependency field, which is reported as a payload warning rather
+than confused with missing \texttt{ANALYZE}.
+
+Verification checks deployment state only.  It does not compare production
+payload bytes with advisor payload bytes, rerun CE fidelity, or prove that a
+fresh production realization matches the frozen advisor realization.  A
+production \texttt{ANALYZE} is expected to create a new native realization;
+this is operational deployment state, not same-realization replay evidence.
+
+If rollback is required, the reviewed \texttt{rollback.sql} removes exactly
+the recommendation-owned definitions with \texttt{DROP STATISTICS IF
+EXISTS}.  \texttt{verify-rollback} checks that those deterministic names are
+absent and reports partial rollback as a failure.  Rollback does not restore
+the pre-advice PostgreSQL statistics realization, is not automatic repair, and
+does not provide a transaction-level atomicity guarantee.
 
 \subsection{Reproducibility and release-qualified path}
-\textit{Planning note: describe Docker clean-room execution on PG16.14,
-semantic reproducibility rather than byte-level reproducibility, and the fact
-that bare-host/VM execution is not release-qualified.}
+
+The release-qualified research-prototype path is the Ubuntu 24.04 Docker
+clean-room.  Its capture image contains stock PostgreSQL client and capture
+tooling; its advisor image contains a source-built patched PostgreSQL 16.14
+used only for private acquisition and advice; and its stock PostgreSQL 16.14
+image supplies disposable production and validation roles.  Runtime users are
+non-root, the clean-room does not mount host project source, and it does not
+depend on a host \texttt{.venv}, \texttt{.build}, PostgreSQL data directory,
+or host PostgreSQL installation.
+
+The Docker path is packaging and reproducibility evidence, not the paper's
+novelty.  It claims semantic lifecycle reproducibility, such as matching
+design, objective, and recommendation digests across cold and warm advice;
+it does not claim byte-identical images, wheels, or PostgreSQL binaries.  The
+validated path is a research prototype rather than production-ready 1.0
+software, and bare-host or VM execution is not release-qualified.
+
+The workflow fails closed on wrong PostgreSQL version or target, incompatible
+schema or sample metadata, malformed or tampered bundles, incompatible
+maintenance models, and missing or invalid candidate-payload identity.  It
+rejects incompatible state rather than silently reusing stale calibration or
+payload artifacts.  Thus the invasive what-if mechanism remains in the
+advisor zone, while the final production state is always conventional
+PostgreSQL extended-statistics definitions collected by stock
+\texttt{ANALYZE}.
+
+The architecture makes no claim of automatic deployment or rollback,
+transactional atomicity, fresh-production payload-byte equality, deployment-
+time CE verification, an encryption or security platform, bare-host/VM
+qualification, or byte-level Docker reproducibility.  Production remains
+stock PostgreSQL 16.14 within the validated scope.
