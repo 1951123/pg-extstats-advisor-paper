@@ -60,13 +60,12 @@ Same-realization correctness does not imply equality after a fresh native
 differ, and the paper does not study design invariance, temporal or schema
 drift, or cross-version robustness.
 
-Deployment remains DBA-controlled/manual; rollback removes recommendation
-definitions but does not restore a prior realization.  The lifecycle evidence
-uses a synthetic clean-room research prototype, not production readiness.
-Capture bundles may contain sensitive SQL, samples, constants, and truth;
-encryption, access control, and retention are external.  Workload-driven
-selection, hypothetical objects, native what-if analysis, statistics
-import/restore, and offline tuning are established prior art; the contribution
+Deployment is DBA-controlled/manual; rollback removes recommendation
+definitions but not a prior realization.  The synthetic clean-room is a
+research prototype, not production readiness.  Capture may contain sensitive
+SQL, samples, constants, and truth; security and retention are external.
+Workload-driven selection, hypothetical objects, native what-if analysis,
+statistics import/restore, and offline tuning are prior art; the contribution
 is bounded to the native-state workflow above.
 
 Future work may extend the supported boundary to joins, higher-arity or

@@ -129,14 +129,14 @@ search still uses native planning for affected queries, not planner-internal
 state reuse.
 
 \paragraph{Bounded materialization-cost pilot.}
-A six-design DMV pilot (empty, ADD prefixes 1/5/16/30, and final-31) measured
-batched \texttt{CREATE STATISTICS}/\texttt{ANALYZE} materialization versus
-backend-local activation.  Medians were
-0.1168\,s versus 0.000421\,s for those components and 0.3921\,s versus
-0.2795\,s total (1.414$\times$; 1.326--1.668$\times$ observed).  Both paths
-used the same 1,963-query workload and planner calls, one warmup, three
-repetitions, and no cache flushing.  This bounded DMV characterization does
-not establish universal, end-to-end, production, or Census-scale speedup;
+A six-design DMV pilot (empty, ADD prefixes 1/5/16/30, final-31) compared
+batched \texttt{CREATE STATISTICS}/\texttt{ANALYZE} with backend-local
+activation.  Component medians were 0.1168\,s versus 0.000421\,s; totals
+were 0.3921\,s versus 0.2795\,s (1.414$\times$; 1.326--1.668$\times$).
+Both paths used 1,963 queries/calls, one warmup, three repetitions, and no
+cache flushing.  Materialization is measurable/removable, while shared native
+\texttt{EXPLAIN} remains the dominant common cost; this bounded DMV result
+supports no universal, end-to-end, production, or Census-scale speedup.
 M2.18/M2.35 remain the authoritative same-realization fidelity evidence.
 
 \subsection{RQ3 --- Contextual Physical Design}
