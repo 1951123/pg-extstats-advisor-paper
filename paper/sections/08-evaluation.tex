@@ -1,24 +1,20 @@
 \section{Evaluation}\label{sec:evaluation}
 
-This section evaluates the frozen research prototype against five questions.
-The evidence is deliberately separated by population: DMV supplies the
-fixed-design and multi-realization robustness studies, Census supplies the
-authoritative corrected search, and the clean-room artifact supplies the
-operational lifecycle evidence.  All experiments use PostgreSQL 16.14, one
-base relation, arity-two MCV and functional-dependency statistics, a fixed
-workload, and a fixed global statistics target.  We report q-error objectives,
-exact agreement gates, design overlap, and bounded operation counts; we do not
-report a physical-per-design wall-clock baseline or a speedup claim.
+This section evaluates five questions.  DMV supplies fixed-design and
+multi-realization robustness, Census the authoritative corrected search, and
+the clean-room artifact lifecycle evidence.  All use PostgreSQL 16.14, one
+base relation, arity-two MCV/FD statistics, a fixed workload, and fixed global
+target.  We report q-error objectives, agreement gates, design overlap, and
+bounded operation counts, not a physical-per-design wall-clock baseline or
+speedup.
 
 \subsection{Experimental Setup and Scope}
 
-Table~\ref{tab:eval-setup} summarizes the populations.  DMV is the small
-development benchmark used to test same-realization fidelity and robustness;
-Census is the authoritative corrected search case.  The persisted sample is
-part of each replay lineage.  Thus a ``same realization'' result compares two
-execution paths over the same ordinary-statistics state and native payload
-repository; it is not a claim about equality after a future independent
-\texttt{ANALYZE}.
+Table~\ref{tab:eval-setup} summarizes the populations.  DMV is the
+development benchmark for same-realization fidelity and robustness; Census is
+the authoritative corrected search case.  A ``same realization'' result uses
+the same ordinary-statistics state and native repository, not a future
+independent \texttt{ANALYZE}.
 
 \begin{table}[t]
 \caption{Evaluation populations and purpose. Counts are effective workload
@@ -38,19 +34,17 @@ DMV M2.20 & 1,963 & 72; five persisted samples & selected-design stability \\
 \end{tabular}
 \end{table}
 
-The supported scope is intentionally narrow.  It excludes joins, arbitrary
-extended-statistics kinds, target tuning, and planner-version portability.
-The clean-room experiment uses a synthetic fixture for lifecycle checks and
-therefore is not a second production workload result.
+The scope excludes joins, arbitrary extended-statistics kinds, target tuning,
+and planner-version portability.  The clean-room uses a synthetic fixture for
+lifecycle checks, not a second production workload.
 
 \subsection{RQ1 --- Native-Semantic What-If Fidelity}
 
 \paragraph{Question and setup.}
 Can the backend-local overlay reproduce the native physical result for a
-representable design?  DMV M2.18 compares one 31-statistics design (8 MCV and
-23 FD) through hypothetical replay and physical materialization.  Both paths
-use the same PostgreSQL 16.14 build, workload, truth, ordinary-statistics
-state, persisted sample, and payload bytes.
+representable design?  DMV M2.18 compares one 31-statistics design (8 MCV,
+23 FD) through hypothetical replay and physical materialization over the same
+build, workload, truth, ordinary state, sample, and payload bytes.
 
 \paragraph{Metric and result.}
 We require equality of the estimate vector, q-error vector, objective, and
@@ -85,12 +79,10 @@ fidelity, join fidelity, or full-planner fidelity.
 \subsection{RQ2 --- State Virtualization and Bounded Evaluation Work}
 
 \paragraph{Question and setup.}
-Can one frozen native payload realization evaluate many configurations without
-per-design \texttt{ANALYZE}, while conservative query-level reuse preserves
-exact outcomes?  Census M2.21 runs the deterministic ADD-only search over the
-authoritative 4,506-candidate catalog.  Acquisition and shell realization are
-pre-search operations; search moves activate counterfactual state and invoke
-the native evaluator.
+Can one frozen realization evaluate many configurations without per-design
+\texttt{ANALYZE}, while query-level reuse preserves exact outcomes?  Census
+M2.21 runs deterministic ADD-only search over the authoritative 4,506-candidate
+catalog; acquisition and shell realization are pre-search operations.
 
 \paragraph{Metric and result.}
 We report conceptual moves, exact-bound pruning, native evaluations, planner
@@ -129,12 +121,11 @@ the affected queries.
 
 \paragraph{Question and setup.}
 Do native statistics interactions make singleton utility insufficient, and can
-contextual evaluation construct a maintenance-feasible local design?  We use
-DMV M2.17d for the complete 72-candidate ADD-only search and Census M2.21 for
-the authoritative screened development path.  The DMV search reached an
-ADD-local optimum after 32 rounds; the Census run used its preregistered
-top-5\% present-candidate screen (226 candidates) and then the same native
-contextual evaluator.
+contextual evaluation construct a maintenance-feasible local design?  DMV
+M2.17d uses the complete 72-candidate ADD-only search; Census M2.21 uses the
+authoritative screened path (the preregistered top-5\% present-candidate
+screen, 226 candidates).  The DMV search reached an ADD-local optimum after
+32 rounds.
 
 \paragraph{Metric and result.}
 For DMV, the objective fell from 42,791.986 to 22,014.061 (48.56\% relative
@@ -169,13 +160,11 @@ that all 4,506 candidates were exhaustively optimized under every move type.
 \subsection{RQ4 --- Production-Separated Closure}
 
 \paragraph{Question and setup.}
-Can stock PostgreSQL capture a sealed bundle that supports offline advice,
-DBA-controlled deployment, and verification without moving the patched backend
-into production?  M2.33 exercises this lifecycle in an Ubuntu 24.04 Docker
-clean-room with a two-candidate, one-query fixture.  The capture image uses
-stock PostgreSQL client tooling; the private advisor image uses source-built
-patched PostgreSQL 16.14; production and validation images use stock
-PostgreSQL 16.14.
+Can stock PostgreSQL capture support offline advice, DBA-controlled deployment,
+and verification without moving the patched backend into production?  M2.33
+exercises this in an Ubuntu 24.04 Docker clean-room with a two-candidate,
+one-query synthetic fixture: stock capture/production tooling surrounds a
+source-built patched PostgreSQL 16.14 advisor.
 
 \paragraph{Metric and result.}
 The lifecycle summary is PASS for capture, offline advice, preflight,
@@ -213,11 +202,11 @@ versions.
 \subsection{RQ5 --- Statistics-Realization Robustness}
 
 \paragraph{Question and setup.}
-How do a fixed design and independently selected designs behave across
-independent DMV statistics realizations?  DMV M2.19 replays one fixed 31-candidate design
-across ten fresh native realizations.  DMV M2.20 performs five persisted-sample
-72-candidate searches and a 5$\times$5 hypothetical cross-evaluation matrix;
-sample A is the M2.17d lineage and B--E are independently captured samples.
+How do fixed and independently selected designs behave across independent DMV
+realizations?  M2.19 replays one fixed 31-candidate design across ten fresh
+realizations.  M2.20 performs five persisted-sample 72-candidate searches and
+a 5$\times$5 cross-evaluation matrix; sample A is the M2.17d lineage and B--E
+are independent captures.
 
 \paragraph{Metric and result.}
 For M2.19, every run remained beneficial: relative improvement ranged from

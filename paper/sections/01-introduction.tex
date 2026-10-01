@@ -28,24 +28,16 @@ same state that must be physically collected for that configuration. We make no
 runtime claim from this observation; it identifies the evaluation boundary
 that the system changes.
 
-Several established design points define the surrounding space. AutoAdmin's
-what-if interface and SQL Server's Database Engine Tuning Advisor evaluate
-hypothetical physical configurations against workloads without implementing
-each proposed index or other structure~\cite{chaudhuri1998whatif,microsoftdta}.
-HypoPG makes planner-visible hypothetical objects backend-local in
-PostgreSQL~\cite{hypopg}. StatAdvisor and DB2 statistical views support
-statistics-bearing objects, column groups, optimizer matching, and workload
-recommendation~\cite{elhelw2009statadvisor,db2statviews}. Oracle supports
-pending statistics for session testing and import/export of collected
-statistics~\cite{oraclependingstats,oracleimportstats}; PostgreSQL 19 now
-documents \texttt{pg\_restore\_extended\_stats()} for restoring extended
-statistics after a restore~\cite{postgresql19restore}. Thus workload-driven
-selection, what-if configuration analysis, hypothetical objects, precomputed
-statistics testing, offline/test-server tuning, and advisor lifecycles are not
-claims of this paper. The
-narrower capability we address is a PostgreSQL-native what-if substrate for
-extended-statistics payload states that can be selected and recombined during a
-configuration search.
+The surrounding design space is established: AutoAdmin and SQL Server's
+Database Engine Tuning Advisor provide what-if analysis
+~\cite{chaudhuri1998whatif,microsoftdta}; HypoPG provides backend-local
+hypothetical objects~\cite{hypopg}; StatAdvisor and DB2 provide workload and
+statistics-bearing recommendations~\cite{elhelw2009statadvisor,db2statviews};
+Oracle and PostgreSQL 19 provide statistics testing, transport, or restoration
+~\cite{oraclependingstats,oracleimportstats,postgresql19restore}.  Those
+families are not claims of this paper.  We address the narrower PostgreSQL
+native what-if substrate for extended-statistics payload states selected and
+recombined during configuration search.
 
 The central design choice is to virtualize statistics state, not
 cardinality-estimator semantics. There are three conceptual alternatives.
@@ -71,26 +63,18 @@ composition, and numerical cardinality estimation. The Python advisor does
 not emulate those CE rules; it supplies the hypothetical state that the native
 planner consumes.
 
-This is more than storing serialized bytes. The repository is necessary but is
-not by itself the what-if mechanism. Registration validates candidate identity
-and relation ownership; \texttt{ABSENT\_NATIVE} preserves a legitimate native
-absence; activation replaces the membership and order considered by the
-planner; and the patched lookup path lets native statistics code consume the
-registered state. The resulting interface is intentionally specific to the
-supported PostgreSQL fragment. It is not presented as a generic virtualization
-theory or as a replacement for prior hypothetical-object systems.
+The repository is not by itself the what-if mechanism: registration validates
+identity and ownership, \texttt{ABSENT\_NATIVE} preserves native absence, and
+activation controls the membership and order consumed by the patched lookup
+path.  This interface is specific to the validated fragment, not a generic
+virtualization theory or replacement for prior hypothetical-object systems.
 
-The system realization is \emph{pg-extstats-advisor}. Production PostgreSQL
-stays stock and capture is read-only. Capture exports the persisted sample,
-workload truth, schema, and compatibility metadata; it does not export native
-extended-statistics payload bytes. A private advisor PostgreSQL reconstructs
-one frozen statistics realization, derives or loads the native candidate
-payload repository, evaluates hypothetical configurations, and emits an
-ordinary recommendation. A DBA may then review and deploy standard PostgreSQL
-statistics DDL, run \texttt{ANALYZE}, and perform verification or rollback
-verification. The advisor-side PostgreSQL patch is confined to this private
-evaluation environment, so advice can continue after production becomes
-unavailable.
+The realization is \emph{pg-extstats-advisor}: stock production provides a
+read-only capture bundle, while a private patched PostgreSQL reconstructs one
+frozen realization, evaluates configurations, and emits ordinary advice.  A
+DBA reviews and deploys standard DDL and \texttt{ANALYZE}; the patch remains
+confined to the private evaluation environment, so advice can continue after
+production becomes unavailable.
 
 Search is deliberately a consumer of the substrate rather than the novelty
 center. The release-qualified advisor uses deterministic contextual ADD-only

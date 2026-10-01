@@ -123,3 +123,12 @@ The plan preserves all frozen claims: C1 substrate, C2 native CE authority, C3 s
 ## Audit conclusion
 
 The manuscript is approximately two to three pages above a likely 12--13-page target, but the excess is concentrated in repeated framing and operational prose rather than in the mechanism or evidence core. The safest next milestone is a targeted Section 7/8/2 compression pass, followed by a separate visual-layout pass. This note is the only artifact changed by this audit.
+
+## Phase 1 compression update
+
+- **Files changed:** `paper/sections/01-introduction.tex`, `paper/sections/02-background.tex`, `paper/sections/07-architecture.tex`, and `paper/sections/08-evaluation.tex`.
+- **Pages:** 15 before the pass; 14 after the pass; one rendered page saved.
+- **Estimated saved pages:** approximately 0.8--1.0 page, consistent with the Phase 1 target.
+- **Compressed themes:** Section 7 Docker and lifecycle implementation detail; Section 8 repeated setup/scope prose; Introduction/Background prior-art catalogue repetition; repeated capture/payload and native-authority framing.
+- **Preserved claims:** C1--C10, all RQ headings and numerical results, every evaluation population, every evidence table, Figure 1, the Section 3 contract, the Section 4 substrate definition, the Section 5 native-CE boundary, and the Section 9 prior-art distinctions.
+- **Validation:** `make` succeeded, `git diff --check` passed, and the rendered pages were inspected. No horizontal overfull boxes, undefined citations/references, or LaTeX errors were introduced.

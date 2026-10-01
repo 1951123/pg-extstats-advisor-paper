@@ -63,34 +63,19 @@ reported later, not asserted as a new theorem here.
 
 \subsection{Existing what-if and statistics-management approaches}
 
-Several prior-art families define the surrounding design space.  Workload-
-driven statistics selection, maintenance overhead, and interaction-aware
-recommendation are established by automated statistics management such as
-MNSA~\cite{chaudhuri2001statistics}, StatAdvisor~\cite{elhelw2009statadvisor},
-and DB2 statistical views and column-group statistics~\cite{db2statviews}.
-These systems establish that choosing statistics-bearing objects for a
-workload and accounting for their resource implications are prior problems;
-the present paper does not claim the problem formulation as new.
+Several prior-art families define the space.  MNSA, StatAdvisor, and DB2
+establish workload-driven selection, maintenance concerns, and
+statistics-bearing objects~\cite{chaudhuri2001statistics,elhelw2009statadvisor,db2statviews};
+the selection problem is not new.  AutoAdmin, SQL Server's Database Engine
+Tuning Advisor, and HypoPG establish what-if physical design and backend-local
+hypothetical objects~\cite{chaudhuri1998whatif,microsoftdta,hypopg}.
 
-What-if physical design provides a second lineage.  AutoAdmin's What-If Index
-Analysis Utility and SQL Server's Database Engine Tuning Advisor evaluate
-hypothetical physical configurations against workloads without implementing
-each proposed structure~\cite{chaudhuri1998whatif,microsoftdta}.  HypoPG makes
-planner-visible hypothetical objects backend-local in PostgreSQL~\cite{hypopg}.
-The analogy is direct: a hypothetical index virtualizes a physical-design
-state while the native optimizer evaluates it.  What-if configuration
-analysis and planner-visible hypothetical objects are therefore established
-prior art, not claims of this paper.
-
-A third family transports or delays publication of precomputed statistics.
-Oracle supports pending statistics for session testing and import/export of
-collected statistics~\cite{oraclependingstats,oracleimportstats}; DB2 provides
-statistics-bearing views and column groups; and PostgreSQL 19 documents
-\texttt{pg\_restore\_extended\_stats()} for restoring extended-statistics
-values after a restore~\cite{db2statviews,postgresql19restore}.  Testing,
-transporting, restoring, or delaying publication of precomputed statistics is
-also established.  The paper does not claim that statistics injection or
-statistics restoration without an immediate \texttt{ANALYZE} is new.
+Oracle pending/imported statistics and PostgreSQL 19's
+\texttt{pg\_restore\_extended\_stats()} establish statistics testing and
+transport~\cite{oraclependingstats,oracleimportstats,postgresql19restore}.
+Accordingly, workload selection, what-if analysis, hypothetical objects, and
+statistics transport or restoration are not claims of this paper; the detailed
+boundaries are given in Section~9.
 
 \subsection{Design alternatives}
 
