@@ -94,7 +94,8 @@ speedup against a physical-per-design baseline.
 \subsection{Query-level conservative reuse}
 
 The evaluator's incremental boundary is a candidate move and a conservative
-query incidence set.  For an ADD, DROP, or SWAP, the incidence index takes the
+query incidence set.  For the library's ADD/DROP/SWAP development moves (the
+release-qualified product path uses ADD only), the incidence index takes the
 union of the queries associated with the move endpoints.  The evaluator
 activates the counterfactual ordered design, replans exactly those affected
 queries with native \texttt{EXPLAIN}, and copies the previous immutable query

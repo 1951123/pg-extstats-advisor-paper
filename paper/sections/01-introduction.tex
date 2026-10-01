@@ -109,7 +109,7 @@ baseline that has not been measured. Third, do native interactions make
 singleton utility insufficient for contextual physical design? Fourth, can
 stock production capture support offline advice, DBA-controlled deployment,
 and lifecycle verification? Fifth, how do fixed and selected designs behave
-across independent statistics realizations? Same-realization agreement is a
+across independent DMV statistics realizations? Same-realization agreement is a
 correctness statement. Independent-realization behavior is a robustness
 statement: a future \texttt{ANALYZE} may produce different payloads, estimates,
 or selected designs without implying a substrate failure.
@@ -131,7 +131,7 @@ offline recommendation, and an ordinary stock-PostgreSQL deployment,
 \texttt{ANALYZE}, and verification lifecycle.
 \item \textbf{Evaluation.} We provide bounded evidence for same-realization
 fidelity, contextual candidate behavior, operation counts and repeatability,
-production-separated closure, and independent-realization robustness. This is
+production-separated closure, and bounded DMV independent-realization robustness. This is
 evidence, not a separate conceptual novelty claim.
 \end{enumerate}
 
