@@ -27,7 +27,7 @@ Population & Queries & Candidates / realizations & Purpose \\
 \midrule
 DMV M2.18/M2.35 & 1,963 & 31 selected; 26 configurations; one persisted realization & hypothetical--physical fidelity \\
 DMV M2.17d & 1,963 & 72; one persisted realization & full-catalog contextual ADD search \\
-Census M2.21 & 468 & 4,506; one persisted realization & authoritative search and physical validation \\
+Census M2.21 & 468 & 4,506 catalog; 226 subset; one persisted realization & screened ADD search and physical validation \\
 DMV M2.19 & 1,963 & fixed 31; 10 fresh realizations & fixed-design robustness \\
 DMV M2.20 & 1,963 & 72; five persisted samples & selected-design stability \\
 \bottomrule
@@ -91,27 +91,28 @@ fidelity, join fidelity, or full-planner fidelity.
 \paragraph{Question and setup.}
 Can one frozen realization evaluate many configurations without per-design
 \texttt{ANALYZE}, while query-level reuse preserves exact outcomes?  Census
-M2.21 runs deterministic ADD-only search over the authoritative 4,506-candidate
-catalog; acquisition and shell realization are pre-search operations.
+M2.21 screens the authoritative 4,506-candidate catalog with the
+preregistered raw top-5\% rule, then searches the fixed 226-candidate visible
+subset; acquisition and shell realization are pre-search operations.
 
 \paragraph{Metric and result.}
-We report conceptual moves, exact-bound pruning, native evaluations, planner
-calls, and repeat determinism.  The run considered 19,210 conceptual and
-feasible moves, pruned 2,441 by the exact bound (12.71\%), performed 16,769
-native evaluations, and issued 88,654 planner calls.  A second run matched the
+The run considered 19,210 conceptual/feasible moves in the fixed
+226-candidate subset, pruned 2,441 by the exact bound (12.71\%), performed
+16,769 native evaluations, and issued 88,654 planner calls.  A second run
+matched the
 accepted sequence, final design, objective, cost, counters, and termination
 exactly.  The selected design has 112 present candidates (110 MCV and 2 FD),
 and the physical validation matched 468/468 estimates and q-errors.
 
 \begin{table}[t]
-\caption{RQ2 bounded work and exact repeat (Census M2.21).}
+\caption{RQ2 bounded work and exact repeat (Census M2.21 screened search).}
 \label{tab:rq2}
 \scriptsize
 \begin{tabular}{@{}p{.58\columnwidth}r@{}}
 \toprule
 Quantity & Value \\
 \midrule
-Conceptual/feasible moves & 19,210 \\
+Moves in 226-candidate screened set & 19,210 \\
 Exact-bound pruned & 2,441 (12.71\%) \\
 Native evaluations & 16,769 \\
 Planner calls & 88,654 \\
