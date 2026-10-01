@@ -121,26 +121,20 @@ query is replanned by PostgreSQL.
 
 \subsection{Safe objective lower bounds}
 
-The evaluator exposes an exact lower bound used by the deterministic search
-client when the affected set is conservative.  Every supported positive-truth
-q-error contribution is at least one.  If $A$ is the affected-query set and
-$L(Y)$ is the current objective, the optimistic lower bound for a move is
+The evaluator exposes an exact lower bound for the deterministic search client
+when the affected set is conservative.  Since every positive-truth q-error
+contribution is at least one, for affected set $A$ and current objective
+$L(Y)$:
 \[
  LB(Y,A)=L(Y)-\sum_{q\in A}qerr(q,Y,R)+|A|.
 \]
-It assumes that every affected query can improve all the way to its minimum
-possible contribution of one, while retaining the current contributions of
-unaffected queries.  Therefore a move with $LB(Y,A)\ge L(Y)$ cannot strictly
-improve the current state.  During best-improvement enumeration, a move with
-$LB(Y,A)>L^\star$ cannot beat the incumbent $L^\star$ either.  The
-implementation applies these two tests before invoking native evaluation and
-records the corresponding pruning reason.
-
-This is exact pruning for the stated q-error objective and conservative
-incidence contract.  It can avoid some native evaluations without changing
-the selected move, trajectory, or termination result.  It is a bounded
-search-client optimization, not a new general search algorithm or a claim of
-global optimality.
+The bound gives affected queries their optimistic minimum contribution of one
+and retains unaffected contributions.  Thus $LB(Y,A)\ge L(Y)$ cannot strictly
+improve the current state, and $LB(Y,A)>L^\star$ cannot beat the incumbent.
+These exact tests are applied before native evaluation.  Under the stated
+q-error and conservative-incidence contracts, pruning does not change the
+move, trajectory, or termination result; it is a bounded search-client
+optimization, not a general search algorithm or global-optimality claim.
 
 \subsection{Correctness boundary}
 

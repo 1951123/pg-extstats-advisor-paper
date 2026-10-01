@@ -79,29 +79,12 @@ boundaries are given in Section~9.
 
 \subsection{Design alternatives}
 
-These precedents leave a narrower systems capability required by our
-PostgreSQL setting.  This paper focuses on a backend-local evaluation
-substrate in which a frozen catalog of native MCV/FD candidate states can be
-registered, selectively activated in representable configurations, and
-consumed by PostgreSQL's native estimator without physically materializing
-each design.  The scope is deliberately limited to the supported PostgreSQL
-16.14, one-base-relation, fixed-target, arity-two fragment; it is not a claim
-about generic what-if optimization or arbitrary PostgreSQL statistics.
-
-There are three conceptual alternatives.  \emph{Physical-per-design}
-evaluation keeps native semantics and persistent catalog state, but repeats
-definition creation, payload collection, and planner evaluation for each
-configuration.  \emph{External estimator emulation} makes hypothetical
-configurations easy to represent after one acquisition, but duplicates a
-selected subset of PostgreSQL's applicability, precedence, clause
-consumption, and MCV/FD composition rules outside the database.  An earlier
-CE-Replay project line used this approach for a bounded research fragment; it
-is historical context here, not the runtime mechanism of the current advisor.
-
-\emph{Native-state virtualization} acquires one frozen realization, retains
-the native candidate states, exposes a transient backend-local membership and
-order, and asks PostgreSQL to perform the native estimate.  The key design
-choice is therefore to virtualize statistics state, not cardinality-estimator
-semantics.  Section~3 formalizes the resulting definition, realization, and
-budget contract; Sections~4 and~5 then describe the backend-local substrate
-and native evaluation boundary.
+The narrower capability needed here is a backend-local catalog of native MCV/FD
+states that PostgreSQL can consume in representable subsets without physically
+materializing each design.  The scope is PG16.14, one base relation, a fixed
+target, and arity two, not generic what-if optimization.  The alternatives are
+physical-per-design evaluation (native but repeatedly materialized), external
+CE emulation (reusable state but duplicated rules), and native-state
+virtualization (one frozen realization, transient membership/order, native CE).
+The earlier CE-Replay line is historical context, not the current mechanism.
+Sections~3--5 formalize this boundary.

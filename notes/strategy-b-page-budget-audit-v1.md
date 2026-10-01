@@ -132,3 +132,11 @@ The manuscript is approximately two to three pages above a likely 12--13-page ta
 - **Compressed themes:** Section 7 Docker and lifecycle implementation detail; Section 8 repeated setup/scope prose; Introduction/Background prior-art catalogue repetition; repeated capture/payload and native-authority framing.
 - **Preserved claims:** C1--C10, all RQ headings and numerical results, every evaluation population, every evidence table, Figure 1, the Section 3 contract, the Section 4 substrate definition, the Section 5 native-CE boundary, and the Section 9 prior-art distinctions.
 - **Validation:** `make` succeeded, `git diff --check` passed, and the rendered pages were inspected. No horizontal overfull boxes, undefined citations/references, or LaTeX errors were introduced.
+
+## Phase 2 compression update
+
+- **Files changed:** `paper/sections/02-background.tex`, `paper/sections/05-native-evaluation.tex`, `paper/sections/06-search.tex`, and `paper/sections/09-related-work.tex`.
+- **Pages:** 14 before the pass; 13 after the pass; one additional rendered page saved.
+- **Compressed themes:** moved detailed literature positioning to Section 9; shortened the Section 5.5 exact lower-bound note; reduced search-client prose, repeated ADD-only/non-optimality qualifications, and duplicated limitation framing.
+- **Claims preserved:** C1--C10, the q-error lower-bound idea and exactness, deterministic contextual ADD-only semantics, fixed-target maintenance constraint, all evidence tables and numerical results, and the complete HypoPG/Oracle/DB2/PG19 distinctions.
+- **Validation:** `make` succeeded, `git diff --check` passed, and pages 8--13 were visually inspected. No undefined references/citations, LaTeX errors, or overfull boxes were introduced.
