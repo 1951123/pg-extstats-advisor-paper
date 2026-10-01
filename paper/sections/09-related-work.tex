@@ -1,4 +1,107 @@
 \section{Related Work}
-\textit{Planning skeleton only; the imported bibliography preserves legacy
-citation keys pending a focused related-work audit.}
 
+This paper builds on several established lines rather than claiming the
+selection problem, hypothetical objects, or offline tuning workflow as new.
+The relevant distinction is the boundary at which PostgreSQL extended-
+statistics state becomes hypothetical while PostgreSQL remains the semantic
+authority.
+
+\subsection{Automated statistics management}
+
+Automated statistics management already treats statistics as workload-
+dependent physical-design objects.  MNSA uses workload, optimizer, and data
+information to select statistics while considering creation and maintenance
+overhead~\cite{chaudhuri2001statistics}.  StatAdvisor recommends interacting
+statistical views for a workload, and DB2's statistical views and column-group
+facilities provide multivariate statistics-bearing objects matched by the
+optimizer~\cite{elhelw2009statadvisor,db2statviews}.  These systems establish
+workload-driven selection, maintenance concerns, multivariate objects, and
+configuration-dependent utility.  The statistics-selection problem itself is
+therefore not a contribution of this paper.  Our RQ3 experiments characterize
+contextual utility in the supported PostgreSQL MCV/FD configuration space; they
+do not discover statistics interaction in general or introduce a new advisor
+objective.
+
+\subsection{What-if physical design and hypothetical objects}
+
+What-if physical design likewise predates this work.  AutoAdmin's What-If
+Index Analysis Utility evaluates workload effects of hypothetical physical
+configurations without materializing each index~\cite{chaudhuri1998whatif},
+and the Database Engine Tuning Advisor evaluates user-specified hypothetical
+indexes, indexed views, or partitioning against a workload~\cite{microsoftdta}.
+HypoPG provides the closest PostgreSQL design pattern: hypothetical indexes
+are planner-visible and backend-local, with session-scoped activation and
+reset~\cite{hypopg}.  The hypothetical-object pattern is therefore established
+prior art; this paper does not claim to be the first what-if interface or the
+first backend-local hypothetical object.
+
+The narrower distinction is the state consumed by the native estimator.
+Within the validated PostgreSQL 16.14 fragment, the advisor derives native
+MCV/FD payload states, retains their acquisition identity, represents a
+legitimate \texttt{ABSENT\_NATIVE} result, and exposes an ordered active subset
+of candidate objects to PostgreSQL's extended-statistics lookup path.  Native
+PostgreSQL then performs the supported applicability, consumption,
+deserialization, composition, and cardinality estimation.  HypoPG provides
+the relevant backend-local hypothetical-object precedent, but for hypothetical
+indexes rather than the native MCV/FD payload state studied here.  This is a
+descriptive systems distinction, not a priority claim and not an assertion
+that HypoPG cannot be extended.
+
+\subsection{Pending, imported, restored, and statistical-view state}
+
+Precomputed statistics state also has established testing and transport
+mechanisms.  Oracle supports pending statistics selected by session policy and
+supports export and import of collected optimizer statistics
+\cite{oraclependingstats,oracleimportstats}.  Thus testing non-default or
+pre-gathered statistics, session-scoped statistics testing, and statistics
+transport are not novel claims here.  DB2 statistical views and column groups
+further establish multiple statistics-bearing objects, optimizer matching, and
+workload recommendation~\cite{db2statviews}; this paper does not imply that
+those systems are weaker in general.
+
+\begin{sloppypar}
+PostgreSQL itself now documents
+\texttt{pg\_restore\_}\allowbreak\texttt{extended\_stats()}, and
+the corresponding PostgreSQL commit material describes creating or updating
+restored extended-statistics values without requiring an immediate
+\texttt{ANALYZE}~\cite{postgresql19restore,postgresql19restorecommit}.  This
+directly overlaps with native extended-statistics payload restoration.  We do
+not claim that PostgreSQL cannot restore extended statistics without
+\texttt{ANALYZE}, that payload injection is novel, or that the PG16.14 patch is
+necessary for future PostgreSQL versions.  The distinction is workflow and
+state lifetime, not a priority claim about native payload restoration:
+\texttt{pg-extstats-advisor} keeps an advisor-side candidate repository and
+transiently activates representable ordered subsets for repeated configuration
+search, rather than installing one persistent restored state.
+\end{sloppypar}
+
+\subsection{Position of \texorpdfstring{\texttt{pg-extstats-advisor}}{pg-extstats-advisor}}
+
+Production/test-server separation, offline advisor execution, recommendation
+generation, and DBA-controlled deployment are established systems patterns.
+The architecture contribution here is not that offline tuning exists; it is
+that the PostgreSQL patch is confined to the private advisor environment while
+the validated production target remains stock PostgreSQL.  Capture supplies a
+persisted sample and compatibility metadata, the private advisor reconstructs
+the fixed realization and payload repository, and deployment returns to
+ordinary stock-PostgreSQL DDL under DBA control.
+
+Our earlier CE-Replay line explored the opposite boundary by externalizing a
+bounded representation of PostgreSQL CE semantics.  The current system
+instead retains PostgreSQL as the semantic authority and virtualizes the
+native statistics state it consumes.  CE-Replay is historical context, not a
+current runtime contribution or a competing evidence claim.
+
+Accordingly, the inherited prior art includes workload-driven statistics
+selection, maintenance-aware recommendation, contextual statistics
+interactions, what-if physical design, planner-visible hypothetical objects,
+native optimizer evaluation, pending/imported/restored statistics, statistical
+views, and offline/test-server tuning.  Within PostgreSQL 16.14's validated
+base-relation fragment, our contribution is a backend-local what-if substrate
+that binds advisor-derived native MCV/FD payload states (including
+\texttt{ABSENT\_NATIVE}) to candidate objects, exposes an ordered active subset
+to PostgreSQL's statistics path, and leaves estimator semantics native.  The
+claim is deliberately bounded to the fixed target, arity-two candidates,
+representable catalog subsets, and the documented predicate fragment; it is
+not a claim of firstness, uniqueness, generic PostgreSQL support, or a new
+statistics-selection algorithm.
