@@ -1,3 +1,93 @@
 \section{Discussion, Limitations, and Conclusion}
-\textit{Planning skeleton only; claim boundaries are frozen in the non-claims
-planning note.}
+
+\subsection{Discussion and Design Implications}
+
+The central design lesson is to \emph{virtualize statistics state, not
+cardinality-estimator semantics}.  In this setting, the useful abstraction
+boundary was the optimizer input state rather than a reimplementation of
+optimizer semantics.  Candidate MCV/FD payloads are derived under one frozen
+realization, retained with their identity and possible
+\texttt{ABSENT\_NATIVE} state, and exposed as representable ordered subsets.
+PostgreSQL remains responsible for the supported applicability, precedence,
+consumption, deserialization, composition, and cardinality-estimation rules.
+The advisor changes the state consumed by those rules; it does not duplicate
+them in an external estimator.
+
+The evidence supports this boundary within the validated fragment.  The
+hypothetical and physical paths agree when they use the same realization, one
+repository supports many design evaluations without per-design search-loop
+materialization, and the tested DMV/Census workloads show contextual rather
+than configuration-independent candidate utility.  The invasive mechanism can
+remain in a private advisor while capture and deployment use stock PostgreSQL.
+The tested DMV studies also show that a fixed design can retain benefit across
+independent realizations while independently selected designs can differ
+without large cross-sample objective gaps.  These observations are bounded
+evidence for the current workflow, not a general theory of database
+virtualization or a claim that designs are invariant.
+
+This separation has an operational implication.  The patched PostgreSQL
+backend is an evaluation dependency, not a production dependency: it
+constructs the private realization, evaluates recommendations, and then gives
+the DBA ordinary stock-PostgreSQL DDL.  This does not make production/test-
+server separation novel, nor does it make the prototype production-ready; it
+makes the mechanism usable without requiring a patched production DBMS.
+
+PostgreSQL 19's restored extended-statistics support demonstrates that native
+extended-statistics state is becoming more directly manipulable
+\cite{postgresql19restore}.  Our validated PG16.14 substrate addresses a
+different state-lifetime requirement: retaining a candidate repository and
+transiently activating alternative subsets during search.  Whether a future
+upstream PostgreSQL interface could replace some or all of the current patch
+is an engineering question outside this paper.
+
+\subsection{Limitations and Future Work}
+
+The scope is PostgreSQL 16.14, one base relation, base-relation selection
+cardinality estimation, arity-two MCV and dependency statistics, a fixed
+externally supplied target, and the documented predicate fragment.  Joins,
+higher-arity mechanisms, additional statistics kinds, and target optimization
+are not evaluated.  The release-qualified search is a deterministic
+contextual ADD-only construction.  It is deliberately secondary to the
+substrate: it has no global-optimum or approximation guarantee, while
+ADD/DROP/SWAP remains a development/library capability.  Its maintenance model
+is a target- and environment-specific resource constraint rather than a
+universal PostgreSQL law.
+
+The performance evidence is also bounded.  There is no physical-per-design
+wall-clock baseline; operation counts quantify advisor work but do not
+establish speedup, and q-error improvement is not a query-latency result.
+Same-realization correctness does not imply equality after a fresh native
+\texttt{ANALYZE}.  Robustness evidence is DMV-only: selected designs can
+differ, and the paper does not study design invariance, temporal or schema
+drift, or cross-version robustness.
+
+Deployment remains DBA-controlled and manual.  Rollback verification removes
+recommendation-owned definitions but does not restore a prior statistics
+realization.  The lifecycle evidence uses a synthetic clean-room fixture; the
+Docker path is research-prototype qualification, not production readiness.
+Capture bundles may contain sensitive SQL, sampled rows, constants, and truth;
+encryption, access control, and retention are external responsibilities.  The
+work also does not claim novelty for workload-driven statistics selection,
+hypothetical objects, native optimizer-backed what-if analysis,
+statistics import/restore, or offline tuning.
+
+Future work may extend the supported boundary to joins, higher-arity or
+additional extended-statistics mechanisms, richer search consumers,
+alternative fixed targets, broader realization and drift evaluation, and
+future upstream interfaces where feasible.  These are directions, not claims
+of the current system, and do not reopen the closed sampling-target scope.
+
+\subsection{Conclusion}
+
+PostgreSQL extended-statistics search needs configuration evaluation without
+duplicating the database's estimator semantics.  This paper contributes a
+backend-local overlay that exposes supported native MCV/FD configurations to
+PostgreSQL's own cardinality estimator while keeping candidate realization,
+activation order, and production deployment explicit.  The evaluation
+establishes same-realization fidelity, contextual design behavior, bounded
+advisor-work evidence, production-separated lifecycle closure, and bounded
+DMV realization robustness.  The contribution remains deliberately scoped to
+the fixed-target PG16.14 base-relation fragment and its representable
+candidate catalog.  For PostgreSQL extended statistics in the validated
+fragment, virtualizing estimator state provides a practical what-if boundary
+while leaving PostgreSQL itself as the semantic authority.
