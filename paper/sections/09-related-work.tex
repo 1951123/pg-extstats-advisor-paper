@@ -22,8 +22,8 @@ Tuning Advisor evaluate hypothetical physical configurations without
 materializing each proposed structure~\cite{chaudhuri1998whatif,microsoftdta}.
 HypoPG provides the closest PostgreSQL pattern: planner-visible,
 backend-local hypothetical indexes with session activation and reset
-~\cite{hypopg}.  What-if analysis and hypothetical objects are therefore
-prior art, not firstness claims here.
+~\cite{hypopg}.  These systems establish the what-if and hypothetical-object
+precedent.
 
 The narrower distinction is the state consumed by the native estimator.  In
 the validated PG16.14 fragment, the advisor derives native MCV/FD payloads,
@@ -40,16 +40,15 @@ Oracle supports pending statistics and export/import of collected optimizer
 statistics~\cite{oraclependingstats,oracleimportstats}; DB2 establishes
 statistics-bearing views, optimizer matching, and workload recommendation
 ~\cite{db2statviews}.  Testing, transporting, or delaying publication of
-precomputed statistics is therefore not claimed as novel.
+precomputed statistics is established prior art.
 
 \begin{sloppypar}
 PostgreSQL now documents
 \texttt{pg\_restore\_}\allowbreak\texttt{extended\_stats()}, and
 commit material describes restoring values without an immediate
 \texttt{ANALYZE}~\cite{postgresql19restore,postgresql19restorecommit}.  This
-overlaps with native payload restoration.  We do not claim restoration or
-injection novelty, nor that the PG16.14 patch is necessary for future versions.
-The distinction is workflow and state lifetime:
+overlaps with native payload restoration.  The distinction is workflow and
+state lifetime; the PG16.14 patch is scoped to the validated version:
 \texttt{pg-extstats-advisor} keeps an advisor-side candidate repository and
 transiently activates representable ordered subsets for repeated configuration
 search, rather than installing one persistent restored state.
@@ -76,5 +75,5 @@ base-relation fragment, our contribution binds advisor-derived native MCV/FD
 states (including \texttt{ABSENT\_NATIVE}) to candidate objects, exposes an
 ordered active subset to PostgreSQL, and leaves CE semantics native.  The
 claim is bounded to the fixed target, arity-two candidates, representable
-subsets, and documented predicates; it is not firstness, uniqueness, generic
-PostgreSQL support, or a new selection algorithm.
+subsets, and documented predicates.  It is a bounded native-state workflow,
+not a claim of generic PostgreSQL support or a new selection algorithm.

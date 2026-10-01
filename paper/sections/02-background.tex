@@ -48,8 +48,8 @@ the target with \texttt{ALTER STATISTICS ... SET STATISTICS} when needed, runs
 Dropping or replacing definitions is then needed before testing another
 configuration.  This path preserves PostgreSQL semantics, but it couples a
 configuration search to repeated catalog mutation and data-dependent payload
-materialization.  The issue is repeated materialization work, not an
-unsupported claim about wall-clock performance.
+  materialization.  The relevant cost here is repeated materialization work;
+  wall-clock performance is outside this evaluation.
 
 Extended-statistics utility is also contextual.  With several candidate
 objects active, PostgreSQL may change which objects are applicable, their
@@ -65,24 +65,24 @@ reported later, not asserted as a new theorem here.
 
 Several prior-art families define the space.  MNSA, StatAdvisor, and DB2
 establish workload-driven selection, maintenance concerns, and
-statistics-bearing objects~\cite{chaudhuri2001statistics,elhelw2009statadvisor,db2statviews};
-the selection problem is not new.  AutoAdmin, SQL Server's Database Engine
+statistics-bearing objects~\cite{chaudhuri2001statistics,elhelw2009statadvisor,db2statviews}.
+AutoAdmin, SQL Server's Database Engine
 Tuning Advisor, and HypoPG establish what-if physical design and backend-local
 hypothetical objects~\cite{chaudhuri1998whatif,microsoftdta,hypopg}.
 
 Oracle pending/imported statistics and PostgreSQL 19's
 \texttt{pg\_restore\_extended\_stats()} establish statistics testing and
 transport~\cite{oraclependingstats,oracleimportstats,postgresql19restore}.
-Accordingly, workload selection, what-if analysis, hypothetical objects, and
-statistics transport or restoration are not claims of this paper; the detailed
-boundaries are given in Section~9.
+These works establish workload selection, what-if analysis, hypothetical
+objects, and statistics transport or restoration; Section~9 details how the
+current workflow differs.
 
 \subsection{Design alternatives}
 
 The narrower capability needed here is a backend-local catalog of native MCV/FD
 states that PostgreSQL can consume in representable subsets without physically
 materializing each design.  The scope is PG16.14, one base relation, a fixed
-target, and arity two, not generic what-if optimization.  The alternatives are
+target, and arity two.  The alternatives are
 physical-per-design evaluation (native but repeatedly materialized), external
 CE emulation (reusable state but duplicated rules), and native-state
 virtualization (one frozen realization, transient membership/order, native CE).

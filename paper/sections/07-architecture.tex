@@ -1,7 +1,7 @@
 \section{Production-Separated Architecture}
 
-The hypothetical overlay is an evaluation mechanism, not a production
-deployment requirement.  The architecture therefore separates stock
+The hypothetical overlay is confined to evaluation.  The architecture
+therefore separates stock
 PostgreSQL 16.14 production from a private advisor zone containing the
 patched backend.  The patch registers and evaluates hypothetical
 extended-statistics state only before a recommendation is returned.
@@ -16,10 +16,10 @@ native evaluator, and fixed-target search client.  After capture,
 \texttt{advise} uses only the transferred bundle and private advisor database,
 not production credentials.
 
-This separation is an operational boundary rather than a novelty claim.
-Offline and test-server tuning are established patterns.  The architectural
-role here is to confine the PostgreSQL-specific what-if mechanism to
-evaluation while keeping the deployment target conventional.
+This is an operational boundary; offline and test-server tuning are
+established patterns.  The architectural role here is to confine the
+PostgreSQL-specific what-if mechanism to evaluation while keeping the
+deployment target conventional.
 
 \subsection{Capture bundle}
 
@@ -104,11 +104,11 @@ a source-built patched PostgreSQL 16.14 advisor used only for private
 acquisition and advice.  Runtime users are non-root, and the clean-room
 mounts neither host project source nor host environments or data directories.
 
-The Docker path is packaging and reproducibility evidence, not novelty.  It
-claims semantic lifecycle reproducibility, such as matching cold/warm design,
-objective, and recommendation digests, not byte-identical images, wheels, or
-binaries.  It remains a research prototype; bare-host and VM execution are
-not release-qualified.
+The Docker path provides packaging and reproducibility evidence.  Its claim is
+semantic lifecycle reproducibility, such as matching cold/warm design,
+objective, and recommendation digests; image, wheel, and binary identity are
+outside that evidence.  It remains a research prototype; bare-host and VM
+execution are not release-qualified.
 
 The workflow fails closed on wrong version or target, incompatible schema or
 sample metadata, malformed bundles, incompatible maintenance models, and

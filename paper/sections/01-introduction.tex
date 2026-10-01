@@ -24,9 +24,8 @@ creating statistics, materializing or collecting their payloads, and invoking
 the native planner. A workload search that compares many configurations would
 repeat that physical-state step. The issue is not merely the number of
 candidates: the state needed to evaluate a configuration is ordinarily the
-same state that must be physically collected for that configuration. We make no
-runtime claim from this observation; it identifies the evaluation boundary
-that the system changes.
+same state that must be physically collected for that configuration. This
+identifies the evaluation boundary that the system changes.
 
 The surrounding design space is established: AutoAdmin and SQL Server's
 Database Engine Tuning Advisor provide what-if analysis
@@ -34,10 +33,10 @@ Database Engine Tuning Advisor provide what-if analysis
 hypothetical objects~\cite{hypopg}; StatAdvisor and DB2 provide workload and
 statistics-bearing recommendations~\cite{elhelw2009statadvisor,db2statviews};
 Oracle and PostgreSQL 19 provide statistics testing, transport, or restoration
-~\cite{oraclependingstats,oracleimportstats,postgresql19restore}.  Those
-families are not claims of this paper.  We address the narrower PostgreSQL
-native what-if substrate for extended-statistics payload states selected and
-recombined during configuration search.
+~\cite{oraclependingstats,oracleimportstats,postgresql19restore}.  These
+families establish the surrounding design space; our narrower focus is a
+PostgreSQL native what-if substrate for extended-statistics payload states
+selected and recombined during configuration search.
 
 The central design choice is to virtualize statistics state, not
 cardinality-estimator semantics. There are three conceptual alternatives.
@@ -63,11 +62,11 @@ composition, and numerical cardinality estimation. The Python advisor does
 not emulate those CE rules; it supplies the hypothetical state that the native
 planner consumes.
 
-The repository is not by itself the what-if mechanism: registration validates
-identity and ownership, \texttt{ABSENT\_NATIVE} preserves native absence, and
-activation controls the membership and order consumed by the patched lookup
-path.  This interface is specific to the validated fragment, not a generic
-virtualization theory or replacement for prior hypothetical-object systems.
+The repository supplies the state consumed by the what-if mechanism:
+registration validates identity and ownership, \texttt{ABSENT\_NATIVE}
+preserves native absence, and activation controls the membership and order
+consumed by the patched lookup path.  The interface targets the validated
+fragment and complements prior hypothetical-object systems.
 
 The realization is \emph{pg-extstats-advisor}: stock production provides a
 read-only capture bundle, while a private patched PostgreSQL reconstructs one
@@ -76,13 +75,12 @@ DBA reviews and deploys standard DDL and \texttt{ANALYZE}; the patch remains
 confined to the private evaluation environment, so advice can continue after
 production becomes unavailable.
 
-Search is deliberately a consumer of the substrate rather than the novelty
-center. The release-qualified advisor uses deterministic contextual ADD-only
+Search is deliberately a consumer of the substrate. The release-qualified
+advisor uses deterministic contextual ADD-only
 search under a fixed maintenance constraint, an exact q-error objective,
 conservative candidate-to-query incidence reuse, and safe lower-bound pruning
-where applicable. The product does not claim ADD/DROP/SWAP search novelty or a
-global optimum. Richer moves remain development/library functionality and do
-not change the product algorithm described here.
+where applicable. Richer ADD/DROP/SWAP moves remain development/library
+functionality and do not change the product algorithm described here.
 
 The evaluation asks five bounded questions. First, do native hypothetical and
 physical states agree for the same persisted realization? Second, can one
@@ -108,7 +106,7 @@ representable hypothetical configurations.
 \item \textbf{Native-semantic design evaluation.} Configuration evaluation
 delegates statistics applicability, precedence, consumption, composition, and
 cardinality estimation to PostgreSQL while reusing unaffected query
-contributions. We claim neither a new CE nor a new search algorithm.
+contributions.
 \item \textbf{Production-separated advisor realization.} We connect
 read-only capture from stock PostgreSQL to private patched-advisor execution,
 offline recommendation, and an ordinary stock-PostgreSQL deployment,
@@ -116,7 +114,7 @@ offline recommendation, and an ordinary stock-PostgreSQL deployment,
 \item \textbf{Evaluation.} We provide bounded evidence for same-realization
 fidelity, contextual candidate behavior, operation counts and repeatability,
 production-separated closure, and bounded DMV independent-realization robustness. This is
-evidence, not a separate conceptual novelty claim.
+evidence for the substrate and workflow within the validated scope.
 \end{enumerate}
 
 The validated scope is PostgreSQL 16.14, one base relation, a fixed supplied

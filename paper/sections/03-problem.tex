@@ -4,8 +4,8 @@
 This section fixes the notation used by the native substrate and evaluator.
 The formulation fixes the system contract; workload-driven statistics
 selection itself is established prior art.  The variables below describe one
-bounded advisor run, not a new optimization formulation or a claim of global
-search optimality.
+bounded advisor run under the established resource-constrained subset
+objective.
 
 \subsection{Workload and truth}
 
@@ -138,8 +138,8 @@ The global statistics target is an externally supplied configuration identity:
  T=100\quad\text{by default}.
 \]
 The caller may supply another compatible positive target, but $T$ is fixed
-before capture, realization, advice, and search; it is not an optimization
-variable.  Payload realization depends on $T$, and maintenance-model
+before capture, realization, advice, and search.  Payload realization depends
+on $T$, and maintenance-model
 compatibility is also target-specific.  The target is consequently bound into
 the problem, acquisition provenance, cache identity, and search configuration.
 An incompatible target or target-specific maintenance model fails closed;
@@ -157,8 +157,7 @@ The bounded optimization problem is therefore:
 \]
 This formalizes the current system contract.  Resource-constrained subset
 selection is established physical-design/statistics-management prior art; the
-paper does not claim formulation novelty, a global optimum, or an
-approximation guarantee.
+product evaluates a bounded local construction under this contract.
 
 The correctness contract is same-realization correctness.  Fix one $R$, one
 design $Y$, the same ordinary-statistics state, the same candidate payload

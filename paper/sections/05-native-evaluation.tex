@@ -84,9 +84,8 @@ design.
 \end{description}
 
 The current claim is consequently about where work occurs and which state is
-reused.  It does not claim that the private advisor never runs
-\texttt{ANALYZE}; acquisition and cache reconstruction can run it before
-search.  It claims only that there is no per-design search-loop
+reused.  Acquisition and cache reconstruction can run \texttt{ANALYZE} before
+search; the search loop has no per-design
 \texttt{CREATE}/\texttt{DROP}/\texttt{ANALYZE}.  The reported evidence is
 operation counts and exact repeated outcomes, not a measured wall-clock
 speedup against a physical-per-design baseline.
@@ -134,7 +133,7 @@ improve the current state, and $LB(Y,A)>L^\star$ cannot beat the incumbent.
 These exact tests are applied before native evaluation.  Under the stated
 q-error and conservative-incidence contracts, pruning does not change the
 move, trajectory, or termination result; it is a bounded search-client
-optimization, not a general search algorithm or global-optimality claim.
+optimization under the current contract.
 
 \subsection{Correctness boundary}
 
@@ -145,8 +144,8 @@ same effective precedence, and the same design $Y$.  Within the supported
 PostgreSQL 16.14 fragment, the hypothetical evaluator should return the same
 target-relation estimate vector and q-error objective as physical PostgreSQL
 using statistics derived from that same realization.  This is a
-same-realization semantic-fidelity claim, not a claim that the overlay
-reimplements the estimator.
+same-realization semantic-fidelity claim: the overlay leaves estimator
+implementation in PostgreSQL.
 
 Realization robustness is a different question.  A future native
 \texttt{ANALYZE} may draw a different sample and consequently produce
@@ -159,9 +158,9 @@ realizations.
 \subsection{Design alternatives}
 
 Table~\ref{tab:eval-alternatives} summarizes the evaluation boundary.  The
-external-estimator row includes the earlier CE-Replay research line only as a
-historical design alternative; it is not the runtime mechanism described by
-the current advisor.
+external-estimator row describes the earlier CE-Replay research line as a
+historical design alternative; the current advisor uses native PostgreSQL
+semantics.
 
 \begin{table}[t]
 \caption{Evaluation-boundary alternatives.}

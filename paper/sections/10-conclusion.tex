@@ -26,11 +26,12 @@ evidence for the current workflow, not a general theory of database
 virtualization or a claim that designs are invariant.
 
 This separation has an operational implication.  The patched PostgreSQL
-backend is an evaluation dependency, not a production dependency: it
-constructs the private realization, evaluates recommendations, and then gives
-the DBA ordinary stock-PostgreSQL DDL.  This does not make production/test-
-server separation novel, nor does it make the prototype production-ready; it
-makes the mechanism usable without requiring a patched production DBMS.
+backend is an evaluation dependency, while production remains a stock
+dependency: it constructs the private realization, evaluates recommendations,
+and then gives the DBA ordinary stock-PostgreSQL DDL.  Production/test-server
+separation remains an established pattern, and the prototype is not
+production-ready; the mechanism is usable without requiring a patched
+production DBMS.
 
 PostgreSQL 19's restored extended-statistics support demonstrates that native
 extended-statistics state is becoming more directly manipulable
@@ -66,10 +67,11 @@ recommendation-owned definitions but does not restore a prior statistics
 realization.  The lifecycle evidence uses a synthetic clean-room fixture; the
 Docker path is research-prototype qualification, not production readiness.
 Capture bundles may contain sensitive SQL, sampled rows, constants, and truth;
-encryption, access control, and retention are external responsibilities.  The
-work also does not claim novelty for workload-driven statistics selection,
-hypothetical objects, native optimizer-backed what-if analysis,
-statistics import/restore, or offline tuning.
+encryption, access control, and retention are external responsibilities.
+Workload-driven statistics selection, hypothetical objects, native
+optimizer-backed what-if analysis, statistics import/restore, and offline
+tuning are established prior-art capabilities; the contribution is bounded to
+the native-state workflow described above.
 
 Future work may extend the supported boundary to joins, higher-arity or
 additional extended-statistics mechanisms, richer search consumers,

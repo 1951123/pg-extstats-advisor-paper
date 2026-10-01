@@ -1,7 +1,7 @@
 \section{Advisor Search and Maintenance Constraint}
 
-Search is a client of the native what-if substrate, not the paper's primary
-technical novelty.  The product obtains a baseline with
+Search is a client of the native what-if substrate.  The product obtains a
+baseline with
 \texttt{evaluate\_design}, evaluates moves with \texttt{evaluate\_move}, and
 leaves applicability, payload consumption, and cardinality estimation to
 PostgreSQL.  Its deterministic contextual ADD-only construction is a scoped,
@@ -35,8 +35,8 @@ The contextual marginal change for a candidate is
 not a fixed singleton score.  The native estimate for $Y\cup\{s\}$ can depend
 on active statistics, precedence, and other selected candidates.  This
 construction exercises the native substrate under a scoped maintenance
-constraint; the library's ADD/DROP/SWAP mode is development-only, not the
-release-qualified product path.
+constraint; the library's ADD/DROP/SWAP mode is development-only, whereas the
+release-qualified product path is ADD-only.
 
 \subsection{Maintenance constraint}
 
@@ -55,14 +55,14 @@ Utility is contextual: a weak or harmful singleton can improve a design after
 another candidate changes applicability, clause consumption, or MCV/FD
 composition, while a positive singleton need not remain the best move.  The
 evaluator therefore computes $\Delta(s\mid Y,R)$ for current $Y$, not a fixed
-score.  This applies established interaction behavior rather than proposing a
-new theorem.
+score.  This applies established interaction behavior within the supported
+fragment.
 
 The release-qualified \texttt{advise\_fixed\_t} path uses the full product
 catalog.  Singleton profiles and candidate-set filters are separately
-versioned development/artifact interfaces; the core workflow does not claim
-negative singleton utility is a generally safe pruning rule.  Any restricted
-visible set is an explicit input, not a theorem about omitted candidates.
+versioned development/artifact interfaces; negative singleton utility remains
+diagnostic rather than a generally safe pruning rule.  Any restricted visible
+set is an explicit input describing the evaluated catalog.
 
 \subsection{Termination and nonclaims}
 
@@ -90,8 +90,8 @@ would violate correctness.  Incrementality therefore stops at query
 granularity, and the exact lower-bound pruning from Section~5 remains a
 secondary search-client optimization.
 
-The product path makes no claim of search novelty, global optimality, or an
-approximation guarantee.  Its ``local optimum'' is specifically ADD-local,
-not DROP/SWAP local.  The maintenance model is scoped to its fixed target and
-calibration environment; singleton utility is not a universally safe pruning
-rule, and query reuse does not extend to planner-internal state.
+The product path terminates at an ADD-local optimum under the current budget
+and realization.  DROP/SWAP remains a development/library capability.  The
+maintenance model is scoped to its fixed target and calibration environment;
+singleton utility remains diagnostic, and query reuse stops at planner-query
+granularity rather than planner-internal state.
