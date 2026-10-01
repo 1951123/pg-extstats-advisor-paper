@@ -333,6 +333,14 @@ No compression was performed.  Ranked by safety for a later page-budget pass:
 5. Defer any bibliography or figure compression until related work and
    conclusion are drafted (higher risk).
 
+## Page-budget observation
+
+The current rebuilt PDF has 13 total pages.  Main text reaches page 13 because
+the still-skeletal Sections 9--10 and the end of Section 8 share that page;
+the references also begin on page 13, so the bibliography occupies one shared
+reference page rather than a separate references-only page.  No page-budget
+compression was performed in this audit.
+
 ## Self-review
 
 1. Every Abstract claim is backed by Section 8 or direct mechanism evidence:
