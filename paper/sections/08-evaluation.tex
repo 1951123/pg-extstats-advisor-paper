@@ -123,9 +123,10 @@ the affected queries.
 Do native statistics interactions make singleton utility insufficient, and can
 contextual evaluation construct a maintenance-feasible local design?  DMV
 M2.17d uses the complete 72-candidate ADD-only search; Census M2.21 uses the
-authoritative screened path (the preregistered top-5\% present-candidate
-screen, 226 candidates).  The DMV search reached an ADD-local optimum after
-32 rounds.
+authoritative screened path (a preregistered raw top-5\% computational screen
+over all 4,506 candidates, retaining 226; all retained candidates happened to
+be \texttt{PRESENT} in the frozen realization).  The DMV search reached an
+ADD-local optimum after 32 rounds.
 
 \paragraph{Metric and result.}
 For DMV, the objective fell from 42,791.986 to 22,014.061 (48.56\% relative
