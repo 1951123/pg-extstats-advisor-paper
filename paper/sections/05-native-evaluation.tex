@@ -87,8 +87,9 @@ The current claim is consequently about where work occurs and which state is
 reused.  Acquisition and cache reconstruction can run \texttt{ANALYZE} before
 search; the search loop has no per-design
 \texttt{CREATE}/\texttt{DROP}/\texttt{ANALYZE}.  The reported evidence is
-operation counts and exact repeated outcomes, not a measured wall-clock
-speedup against a physical-per-design baseline.
+operation counts and exact repeated outcomes, plus a bounded DMV
+materialization-cost pilot; these do not establish a general end-to-end or
+Census-scale speedup.
 
 \subsection{Query-level conservative reuse}
 

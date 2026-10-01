@@ -29,10 +29,10 @@ novelty claims.
 ## Contribution 4 — Evidence and boundaries
 
 Validate same-realization hypothetical/physical fidelity, contextual utility,
-operation-count/repeatability, production closure, and bounded DMV realization
-robustness. State explicitly that no physical-per-design speedup baseline,
-native-sample equivalence, global-optimality guarantee, or universal
-maintenance law is claimed.
+operation-count/repeatability, a bounded DMV materialization-cost pilot,
+production closure, and bounded DMV realization robustness. State explicitly
+that no general physical-per-design speedup, native-sample equivalence,
+global-optimality guarantee, or universal maintenance law is claimed.
 
 ## Superseded contribution hierarchy
 

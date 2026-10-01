@@ -31,10 +31,11 @@ ABSENT_NATIVE behavior, or native CE consumption. These details must be shown
 as the tested interface, while avoiding an unsupported claim of general
 semantic theory.
 
-## R5 — No speedup baseline
+## R5 — Bounded speedup interpretation
 
-Operation counts and no per-move `ANALYZE` do not imply wall-clock speedup. The
-paper must state that a physical-per-design baseline was not measured.
+M2.36 provides a bounded DMV physical-materialization timing pilot, but
+operation counts and that pilot do not imply a general wall-clock speedup. The
+paper must retain the environment/workload/design-sequence boundary.
 
 ## R6 — Scope narrowness
 

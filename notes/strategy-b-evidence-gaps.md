@@ -2,10 +2,10 @@
 
 Only gaps confirmed by the independent audit are listed here.
 
-1. **No physical-per-design baseline.** The repository has operation counts,
-   exact replay, and no per-move `ANALYZE`, but no controlled wall-clock
-   comparison against recreating/analyzing every candidate design.  Therefore
-   the paper must not claim speedup or a quantified avoided time.
+1. **Bounded physical-per-design evidence only.** M2.36 adds a controlled
+   six-design DMV timing comparison against batched creation/analysis, but not
+   a Census-scale or general wall-clock baseline. Therefore the paper must not
+   claim universal speedup or production-wide avoided time.
 2. **Subset coverage is API-bounded, not exhaustive.** The overlay accepts
    arbitrary ordered subsets of the frozen candidate catalog, and the
    authoritative searches exercise many states, but no artifact enumerates

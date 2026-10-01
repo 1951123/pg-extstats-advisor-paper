@@ -34,11 +34,12 @@ computed only from the cited artifact fields.
 | M2.20 design overlap | Jaccard min 0.7428571428571429, median 0.8461174242424243, max 0.9375 | M2.20 | `experiments/dmv-m2-20-multisample-design-stability/summary.json` | `design_overlap` |
 | M2.20 core | consensus core 25; near-core 28 | M2.20 | `experiments/dmv-m2-20-multisample-design-stability/summary.json` | list lengths |
 | M2.20 portability | max relative gap 0.000089042... = 0.00891%; no foreign beats local | M2.20 | `experiments/dmv-m2-20-multisample-design-stability/cross-objective-gaps.csv` | maximum `max_relative_gap`, all `foreign_beats_local=False` |
+| M2.36 materialization pilot | six-design DMV timing; 0.1168 s physical materialization vs 0.000421 s activation; 1.414x median total ratio | M2.36 | `experiments/dmv-m2-36-physical-materialization-pilot/summary.json` | bounded cost characterization only |
 
 ## Deliberate non-claims
 
-The artifacts do not provide a physical-per-design wall-clock baseline, a
-speedup measurement, a global-optimum guarantee, native-sample equivalence
+The artifacts provide only a bounded DMV physical-materialization timing
+pilot, not a general wall-clock speedup measurement, a global-optimum guarantee, native-sample equivalence
 after a future `ANALYZE`, cross-version or join fidelity, temporal/schema drift
 robustness, or production payload-byte equality.  Census M2.21 is the
 authoritative corrected search case but uses its recorded 226-candidate screen;

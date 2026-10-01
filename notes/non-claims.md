@@ -6,7 +6,8 @@ The paper must not claim:
 - a generic partial-evaluation, dependency-oracle, or incremental-computation
   theory;
 - a global optimum, approximation guarantee, or search novelty;
-- speedup or quantified time savings without a physical-per-design baseline;
+- general speedup or quantified production time savings; M2.36 is only a
+  bounded DMV physical-materialization cost characterization;
 - arbitrary PostgreSQL statistics mechanisms, joins, versions, expressions,
   or DBMS portability;
 - that the capture bundle contains native payload bytes or that its sample is

@@ -44,34 +44,30 @@ is an engineering question outside this paper.
 \subsection{Limitations and Future Work}
 
 The scope is PostgreSQL 16.14, one base relation, base-relation selection
-cardinality estimation, arity-two MCV and dependency statistics, a fixed
-externally supplied target, and the documented predicate fragment.  Joins,
-higher-arity mechanisms, additional statistics kinds, and target optimization
-are not evaluated.  The release-qualified search is a deterministic
-contextual ADD-only construction.  It is deliberately secondary to the
-substrate: it has no global-optimum or approximation guarantee, while
-ADD/DROP/SWAP remains a development/library capability.  Its maintenance model
-is a target- and environment-specific resource constraint rather than a
-universal PostgreSQL law.
+estimation, arity-two MCV/dependency statistics, a fixed external target, and
+the documented predicate fragment; joins, higher arities, other kinds, and
+target optimization are not evaluated.  The release-qualified search is a
+deterministic contextual ADD-only construction, secondary to the substrate and
+without a global-optimum or approximation guarantee; ADD/DROP/SWAP remains
+development/library functionality.  Its maintenance model is target- and
+environment-specific, not a universal PostgreSQL law.
 
-The performance evidence is also bounded.  There is no physical-per-design
-wall-clock baseline; operation counts quantify advisor work but do not
-establish speedup, and q-error improvement is not a query-latency result.
+The performance evidence is bounded: a DMV materialization-cost pilot
+supplements operation counts but establishes no general end-to-end or
+Census-scale speedup, and q-error improvement is not a query-latency result.
 Same-realization correctness does not imply equality after a fresh native
 \texttt{ANALYZE}.  Robustness evidence is DMV-only: selected designs can
 differ, and the paper does not study design invariance, temporal or schema
 drift, or cross-version robustness.
 
-Deployment remains DBA-controlled and manual.  Rollback verification removes
-recommendation-owned definitions but does not restore a prior statistics
-realization.  The lifecycle evidence uses a synthetic clean-room fixture; the
-Docker path is research-prototype qualification, not production readiness.
-Capture bundles may contain sensitive SQL, sampled rows, constants, and truth;
-encryption, access control, and retention are external responsibilities.
-Workload-driven statistics selection, hypothetical objects, native
-optimizer-backed what-if analysis, statistics import/restore, and offline
-tuning are established prior-art capabilities; the contribution is bounded to
-the native-state workflow described above.
+Deployment remains DBA-controlled/manual; rollback removes recommendation
+definitions but does not restore a prior realization.  The lifecycle evidence
+uses a synthetic clean-room research prototype, not production readiness.
+Capture bundles may contain sensitive SQL, samples, constants, and truth;
+encryption, access control, and retention are external.  Workload-driven
+selection, hypothetical objects, native what-if analysis, statistics
+import/restore, and offline tuning are established prior art; the contribution
+is bounded to the native-state workflow above.
 
 Future work may extend the supported boundary to joins, higher-arity or
 additional extended-statistics mechanisms, richer search consumers,

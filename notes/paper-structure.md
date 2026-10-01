@@ -69,7 +69,8 @@ semantic mismatch.
 ### 8.3 RQ2 — State virtualization and bounded work
 
 One acquisition/cache, no per-move `ANALYZE`, incidence reuse, operation
-counts, and exact repeatability. No speedup claim without a physical baseline.
+counts, exact repeatability, and a bounded DMV materialization-cost pilot. No
+general end-to-end or Census-scale speedup claim.
 
 ### 8.4 RQ3 — Contextual design
 

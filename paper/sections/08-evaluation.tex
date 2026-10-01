@@ -4,9 +4,9 @@ This section evaluates five questions.  DMV supplies fixed-design and
 multi-realization robustness, Census the authoritative corrected search, and
 the clean-room artifact lifecycle evidence.  All use PostgreSQL 16.14, one
 base relation, arity-two MCV/FD statistics, a fixed workload, and fixed global
-target.  We report q-error objectives, agreement gates, design overlap, and
-bounded operation counts, not a physical-per-design wall-clock baseline or
-speedup.
+target.  We report q-error objectives, agreement gates, design overlap, bounded
+operation counts, and one bounded DMV materialization-cost pilot; these do not
+establish a general end-to-end or Census-scale speedup.
 
 \subsection{Experimental Setup and Scope}
 
@@ -122,11 +122,22 @@ Physical validation & 468/468 estimates and q-errors \\
 \end{tabular}
 \end{table}
 
-These counts quantify planner/evaluator work within the advisor execution;
-they do not establish a wall-clock speedup over a physical-per-design
-baseline.  Reuse is conservative and query-granular: it does not claim to
-reuse planner-internal state, and the search still uses native planning for
-the affected queries.
+These counts quantify advisor work; the pilot below adds a bounded operational
+cost characterization.  Neither establishes a general end-to-end or
+Census-scale speedup.  Reuse remains conservative and query-granular: the
+search still uses native planning for affected queries, not planner-internal
+state reuse.
+
+\paragraph{Bounded materialization-cost pilot.}
+A six-design DMV pilot (empty, ADD prefixes 1/5/16/30, and final-31) measured
+batched \texttt{CREATE STATISTICS}/\texttt{ANALYZE} materialization versus
+backend-local activation.  Medians were
+0.1168\,s versus 0.000421\,s for those components and 0.3921\,s versus
+0.2795\,s total (1.414$\times$; 1.326--1.668$\times$ observed).  Both paths
+used the same 1,963-query workload and planner calls, one warmup, three
+repetitions, and no cache flushing.  This bounded DMV characterization does
+not establish universal, end-to-end, production, or Census-scale speedup;
+M2.18/M2.35 remain the authoritative same-realization fidelity evidence.
 
 \subsection{RQ3 --- Contextual Physical Design}
 

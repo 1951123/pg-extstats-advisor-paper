@@ -27,10 +27,12 @@ query-level incidence reuse preserves exact move outcomes?
 **Evidence.** Census M2.21 search/repeat artifacts and the native adapter,
 evaluator, and overlay code. The authoritative run records 19,210 conceptual
 and feasible moves, 16,769 native evaluations, 88,654 planner calls, and an
-exact repeated trajectory.
+exact repeated trajectory. M2.36 adds a bounded six-design DMV
+materialization-cost timing decomposition.
 
-**Limitations.** These are operation counts and correctness evidence, not a
-physical-per-design wall-clock speedup. Reuse stops at query granularity.
+**Limitations.** M2.36 is DMV/environment/workload/design-sequence specific;
+these results do not establish a general physical-per-design speedup. Reuse
+stops at query granularity.
 
 ## RQ3 — Contextual physical design
 
