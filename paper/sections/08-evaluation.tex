@@ -25,7 +25,7 @@ queries after the corresponding artifact's filtering contract.}
 \toprule
 Population & Queries & Candidates / realizations & Purpose \\
 \midrule
-DMV M2.18 & 1,963 & 31 selected; one persisted realization & hypothetical--physical fidelity \\
+DMV M2.18/M2.35 & 1,963 & 31 selected; 26 configurations; one persisted realization & hypothetical--physical fidelity \\
 DMV M2.17d & 1,963 & 72; one persisted realization & full-catalog contextual ADD search \\
 Census M2.21 & 468 & 4,506; one persisted realization & authoritative search and physical validation \\
 DMV M2.19 & 1,963 & fixed 31; 10 fresh realizations & fixed-design robustness \\
@@ -44,17 +44,22 @@ lifecycle checks, not a second production workload.
 Can the backend-local overlay reproduce the native physical result for a
 representable design?  DMV M2.18 compares one 31-statistics design (8 MCV,
 23 FD) through hypothetical replay and physical materialization over the same
-build, workload, truth, ordinary state, sample, and payload bytes.
+build, workload, truth, ordinary state, sample, and payload bytes.  M2.35
+applies the same gate to 26 deterministic representative configurations,
+including empty, singleton, mixed-size, trajectory, random, and
+precedence-sensitive designs, including native-absence states.
 
 \paragraph{Metric and result.}
 We require equality of the estimate vector, q-error vector, objective, and
-selected payloads.  The result is exact for all 1,963 estimates and q-errors,
-with 31/31 selected payloads matching.  Both paths report objective
-22,014.061; the empty-design baseline is 42,791.986.  Table~\ref{tab:rq1}
-lists the gates.
+selected payloads.  M2.18 is exact for all 1,963 estimates and q-errors, with
+31/31 selected payloads matching.  M2.35 is exact for all 26 configurations:
+each of its 1,963 estimates and q-errors matches, as do all 396 selected
+payload checks and all 1,872 full-repository payload rechecks.  The M2.18
+final design reports objective 22,014.061; the empty-design baseline is
+42,791.986.  Table~\ref{tab:rq1} lists the gates.
 
 \begin{table}[t]
-\caption{RQ1 same-realization fidelity gates (DMV M2.18).}
+\caption{RQ1 same-realization fidelity gates (DMV M2.18 and M2.35).}
 \label{tab:rq1}
 \scriptsize
 \begin{tabular}{@{}p{.54\columnwidth}p{.32\columnwidth}@{}}
@@ -66,6 +71,11 @@ Q-error vector & 1,963/1,963 exact \\
 Objective & 22,014.061316846422 on both paths \\
 Selected payloads & 31/31 exact \\
 Ordinary statistics and realization & exact same persisted state \\
+\addlinespace
+M2.35 configurations & 26/26 exact objectives and estimate vectors \\
+M2.35 estimate/q-error entries & 51,038/51,038 exact each \\
+M2.35 selected payload checks & 396/396 exact \\
+M2.35 full-repository payload checks & 1,872/1,872 exact \\
 \bottomrule
 \end{tabular}
 \end{table}
